@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "io.github.machacamamanilizandro31_boop.twa",
+        "sha256_cert_fingerprints": ["D0:54:45:15:F5:37:A3:0D:52:AE:9D:87:B1:14:1C:65:EA:F2:00:11:F2:81:18:DF:6A:E5:E9:A7:5A:38:10:17"]
+      }
+    }]
