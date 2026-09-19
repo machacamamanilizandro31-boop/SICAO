@@ -6008,6 +6008,7 @@ ${bodyHtml}
                 try {
                     const workbook = new ExcelJS.Workbook();
                     const ws = workbook.addWorksheet(tituloHoja);
+                    ws.views = [{ showGridLines: false }];
                     ws.columns = [
                         { header: 'Usuario', key: 'usuario', width: 24 },
                         { header: 'Contraseña', key: 'password', width: 18 },
@@ -6350,6 +6351,7 @@ ${bodyHtml}
 
                 const workbook = new ExcelJS.Workbook();
                 const sheet = workbook.addWorksheet('Movimiento diario');
+                sheet.views = [{ showGridLines: false }];
 
                 const titulo = `MOVIMIENTO DIARIO DE ALMACEN – ${monthLabel(mesKey).toUpperCase()}`;
                 let row = writeProjectHeader(workbook, sheet, titulo, totalCols);
@@ -6625,6 +6627,7 @@ ${bodyHtml}
 
                 const workbook = new ExcelJS.Workbook();
                 const sheet = workbook.addWorksheet('Almacén valorizado');
+                sheet.views = [{ showGridLines: false }];
 
                 const titulo = `MOVIMIENTO DE ALMACEN VALORIZADO – ${monthLabel(mesKey).toUpperCase()}`;
                 let row = writeProjectHeader(workbook, sheet, titulo, totalCols);
@@ -7813,6 +7816,7 @@ ${bodyHtml}
                 let sheetName = String(ingreso.codigo || 'Material').substring(0, 31);
                 if (workbook.worksheets.some(w => w.name === sheetName)) sheetName = (sheetName + '_' + Math.floor(Math.random() * 1000)).substring(0, 31);
                 const sheet = workbook.addWorksheet(sheetName);
+                sheet.views = [{ showGridLines: false }];
 
                 // Anchos fijados desde el inicio (antes de escribir nada), para que
                 // cualquier cálculo que dependa del ancho real de las columnas
@@ -7969,6 +7973,7 @@ ${bodyHtml}
             function writeKardexAllInOneSheet(workbook, materiales, desde, hasta, force2, orientation) {
                 const totalCols = 10;
                 const sheet = workbook.addWorksheet('Kardex general');
+                sheet.views = [{ showGridLines: false }];
 
                 // Anchos fijados desde el inicio, por la misma razón que en
                 // writeKardexSheet: hacen falta antes de cualquier cálculo que
