@@ -6754,6 +6754,7 @@ ${bodyHtml}
                 sheet.getColumn(4).width = 34; sheet.getColumn(5).width = 7; sheet.getColumn(6).width = 9;
                 for (let c = 7; c <= totalCols; c++) sheet.getColumn(c).width = 12;
 
+                row += 1; // pequeño espacio en blanco antes del cuadro de firmas
                 row = appendSignatureArea(workbook, sheet, row, totalCols) + 1;
                 // Las filas de encabezado (h1/h2) ya se conocen y ya se estilizaron al crearlas
                 // (styleHeaderCell más arriba), así que no hace falta "adivinar" cuál es la fila
