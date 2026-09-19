@@ -6279,27 +6279,6 @@ ${bodyHtml}
                 return ranges;
             }
 
-            // Dibuja un borde continuo alrededor de todo el reporte (de la fila
-            // filaInicio a filaFin, columna colInicio a colFin), sin perder los
-            // bordes que ya tuviera cada celda por dentro — solo agrega el lado
-            // que le toca a cada celda del borde exterior. Así el reporte se ve
-            // como un solo bloque, no como cuadros sueltos.
-            function aplicarBordeExterior(sheet, filaInicio, filaFin, colInicio, colFin) {
-                const estilo = { style: 'medium', color: { argb: 'FF000000' } };
-                for (let c = colInicio; c <= colFin; c++) {
-                    const arriba = sheet.getCell(filaInicio, c);
-                    arriba.border = Object.assign({}, arriba.border, { top: estilo });
-                    const abajo = sheet.getCell(filaFin, c);
-                    abajo.border = Object.assign({}, abajo.border, { bottom: estilo });
-                }
-                for (let r = filaInicio; r <= filaFin; r++) {
-                    const izq = sheet.getCell(r, colInicio);
-                    izq.border = Object.assign({}, izq.border, { left: estilo });
-                    const der = sheet.getCell(r, colFin);
-                    der.border = Object.assign({}, der.border, { right: estilo });
-                }
-            }
-
             function appendSignatureArea(workbook, sheet, startRow, totalCols) {
                 const row = Math.max(startRow + 1, 1);
                 const alturaPt = 110;
@@ -6483,9 +6462,7 @@ ${bodyHtml}
                 sheet.getColumn(totalCols - 2).width = 11; sheet.getColumn(totalCols - 1).width = 11; sheet.getColumn(totalCols).width = 11;
 
                 // Zona inferior para sellos y firmas, manteniendo los cargos en la parte baja.
-                const filaFirmaMD = appendSignatureArea(workbook, sheet, row, totalCols);
-                aplicarBordeExterior(sheet, 1, filaFirmaMD, 1, totalCols);
-                row = filaFirmaMD + 1;
+                row = appendSignatureArea(workbook, sheet, row, totalCols) + 1;
 
                 // =========================================================
                 // FORMATO VISUAL DEL MOVIMIENTO DIARIO
@@ -6780,9 +6757,7 @@ ${bodyHtml}
                 sheet.getColumn(4).width = 34; sheet.getColumn(5).width = 7; sheet.getColumn(6).width = 9;
                 for (let c = 7; c <= totalCols; c++) sheet.getColumn(c).width = 12;
 
-                row = appendSignatureArea(workbook, sheet, row, totalCols);
-                aplicarBordeExterior(sheet, 1, row, 1, totalCols);
-                row += 1;
+                row = appendSignatureArea(workbook, sheet, row, totalCols) + 1;
                 // Las filas de encabezado (h1/h2) ya se conocen y ya se estilizaron al crearlas
                 // (styleHeaderCell más arriba), así que no hace falta "adivinar" cuál es la fila
                 // de encabezado por palabras clave — ese método fallaba porque el título del
@@ -7900,9 +7875,7 @@ ${bodyHtml}
                 r = writeKardexMaterialBlock(sheet, r, ingreso, desde, hasta, force2);
 
                 r += 1;
-                r = appendSignatureArea(workbook, sheet, r - 1, 10);
-                aplicarBordeExterior(sheet, 1, r, 1, 10);
-                r += 1;
+                r = appendSignatureArea(workbook, sheet, r - 1, 10) + 1;
 
 
                 // =========================================================
@@ -8055,9 +8028,7 @@ ${bodyHtml}
                 });
 
                 r += 2;
-                r = appendSignatureArea(workbook, sheet, r - 1, 10);
-                aplicarBordeExterior(sheet, 1, r, 1, 10);
-                r += 1;
+                r = appendSignatureArea(workbook, sheet, r - 1, 10) + 1;
 
                 // Estilo del primer bloque de encabezado (CODIGO DEL PROYECTO / NOMBRE DEL PROYECTO) y repetición al imprimir.
                 for (let cc = 1; cc <= totalCols; cc++) {
