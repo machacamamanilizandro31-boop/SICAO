@@ -4440,22 +4440,63 @@ ${bodyHtml}
             const LOGIN_MAX_INTENTOS = 5;
             const LOGIN_BLOQUEO_MINUTOS = 5;
 
-            function getDeviceId() {
+            // Combina varias características reales del equipo (pantalla, zona
+            // horaria, procesador, tarjeta gráfica, dibujo en canvas) para armar
+            // una "huella" del dispositivo. A diferencia de un código guardado en
+            // el navegador, esto NO se resetea al borrar datos o usar modo
+            // incógnito, porque se recalcula desde el hardware cada vez.
+            function obtenerHuellaDispositivo() {
                 try {
-                    let id = localStorage.getItem('kob-device-id');
-                    if (!id) {
-                        id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('dev-' + Date.now() + '-' + Math.random().toString(36).slice(2));
-                        localStorage.setItem('kob-device-id', id);
-                    }
-                    return id;
+                    const partes = [];
+                    partes.push(navigator.hardwareConcurrency || '');
+                    partes.push(navigator.deviceMemory || '');
+                    partes.push((screen.width || '') + 'x' + (screen.height || '') + 'x' + (screen.colorDepth || ''));
+                    partes.push((Intl.DateTimeFormat().resolvedOptions().timeZone) || '');
+                    partes.push(navigator.platform || '');
+                    partes.push(navigator.language || '');
+
+                    try {
+                        const canvasGL = document.createElement('canvas');
+                        const gl = canvasGL.getContext('webgl') || canvasGL.getContext('experimental-webgl');
+                        if (gl) {
+                            const info = gl.getExtension('WEBGL_debug_renderer_info');
+                            if (info) {
+                                partes.push(gl.getParameter(info.UNMASKED_VENDOR_WEBGL) || '');
+                                partes.push(gl.getParameter(info.UNMASKED_RENDERER_WEBGL) || '');
+                            }
+                        }
+                    } catch (e) { }
+
+                    try {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = 220; canvas.height = 30;
+                        const ctx = canvas.getContext('2d');
+                        ctx.textBaseline = 'top';
+                        ctx.font = '14px Arial';
+                        ctx.fillStyle = '#1B2533';
+                        ctx.fillText('SICAO-huella-dispositivo', 2, 2);
+                        partes.push(canvas.toDataURL());
+                    } catch (e) { }
+
+                    return partes.join('|||');
                 } catch (e) {
-                    return 'dev-sin-almacenamiento';
+                    return 'huella-no-disponible-' + (navigator.userAgent || '');
                 }
             }
-            function chequearDispositivo(cuenta) {
+            async function getDeviceId() {
+                try {
+                    const huella = obtenerHuellaDispositivo();
+                    const datos = new TextEncoder().encode(huella);
+                    const buffer = await crypto.subtle.digest('SHA-256', datos);
+                    return Array.from(new Uint8Array(buffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+                } catch (e) {
+                    return 'dev-sin-almacenamiento-' + (navigator.userAgent || '').slice(0, 40);
+                }
+            }
+            async function chequearDispositivo(cuenta) {
                 if (!cuenta.maxDispositivos) return { ok: true };
                 if (!Array.isArray(cuenta.deviceIdsVinculados)) cuenta.deviceIdsVinculados = [];
-                const miDevice = getDeviceId();
+                const miDevice = await getDeviceId();
                 if (cuenta.deviceIdsVinculados.includes(miDevice)) return { ok: true };
                 if (cuenta.deviceIdsVinculados.length >= cuenta.maxDispositivos) {
                     return { ok: false, motivo: `Esta cuenta ya alcanzó el límite de ${cuenta.maxDispositivos} dispositivo(s) permitido(s). Pide al administrador que libere alguno.` };
@@ -4541,7 +4582,7 @@ ${bodyHtml}
                     }
                     return;
                 } else if (resMatch) {
-                    const chequeoRes = chequearDispositivo(resMatch);
+                    const chequeoRes = await chequearDispositivo(resMatch);
                     if (!chequeoRes.ok) { setLoginError(chequeoRes.motivo); return; }
                     role = 'revendedor';
                     cuentaActiva = resMatch;
@@ -4556,7 +4597,7 @@ ${bodyHtml}
                     }
                     return;
                 } else if (opMatch) {
-                    const chequeoOp = chequearDispositivo(opMatch);
+                    const chequeoOp = await chequearDispositivo(opMatch);
                     if (!chequeoOp.ok) { setLoginError(chequeoOp.motivo); return; }
                     role = 'operador';
                     cuentaActiva = opMatch;
