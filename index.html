@@ -6284,20 +6284,17 @@ ${bodyHtml}
                 const alturaPt = 110;
                 sheet.getRow(row).height = alturaPt;
 
-                // Ancho total real de las columnas que ocupa la tabla, convertido de
-                // unidades de columna de Excel a píxeles (~7px por unidad, aproximación
-                // estándar), para que la imagen cubra exactamente ese ancho.
-                let totalWidthUnits = 0;
-                for (let c = 1; c <= totalCols; c++) {
-                    const colObj = sheet.getColumn(c);
-                    totalWidthUnits += (colObj && colObj.width) ? colObj.width : 8.43;
-                }
-                const widthPx = Math.max(200, totalWidthUnits * 7);
-                const heightPx = alturaPt * (96 / 72);
-
+                // La imagen se "estira" exactamente entre la columna 1 y la última
+                // columna de la tabla (tl/br en vez de un ancho en píxeles), para que
+                // calce perfecto con el ancho real de las columnas, sin necesidad de
+                // calcularlo a mano.
                 try {
                     const imgId = workbook.addImage({ base64: SICAO_FIRMA_IMG_B64, extension: 'png' });
-                    sheet.addImage(imgId, { tl: { col: 0, row: row - 1 }, ext: { width: widthPx, height: heightPx } });
+                    sheet.addImage(imgId, {
+                        tl: { col: 0, row: row - 1 },
+                        br: { col: totalCols, row: row },
+                        editAs: 'twoCell'
+                    });
                 } catch (e) {
                     console.error('No se pudo insertar el cuadro de firmas:', e);
                 }
