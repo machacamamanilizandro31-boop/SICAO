@@ -2924,6 +2924,7 @@
                         <span id="kob-dashreport-title-text">Ingresos</span>
                         <span id="kob-dashreport-subtitle" style="display:block;font-size:12px;font-weight:400;color:var(--muted);"></span>
                     </span>
+                    <button class="kob-btn blue" id="kob-dashreport-export-pdf" style="padding:4px 12px;font-size:13px;">📄 Exportar PDF</button>
                     <button class="kob-btn" id="kob-dashreport-close" style="padding:4px 12px;font-size:18px;line-height:1;font-weight:800;background:var(--red);color:#fff;border-color:var(--red);">&times;</button>
                 </p>
                 <div class="kob-table-wrap" style="max-height:65vh;overflow-y:auto;">
@@ -5898,6 +5899,53 @@ ${bodyHtml}
             function closeDashReport() {
                 $('#kob-dashreport-overlay').classList.remove('show');
             }
+            // Genera un PDF a partir de la tabla que esté abierta en este momento en
+            // la ventana (Productos, Ingresos o Salidas) — toma el título y los datos
+            // directamente de la tabla ya renderizada, así siempre coincide con lo
+            // que se está viendo en pantalla.
+            async function exportarDashReportePDF() {
+                const table = document.getElementById('kob-dashreport-table');
+                const tituloEl = $('#kob-dashreport-title-text');
+                if (!table || !tituloEl) return;
+                const titulo = (tituloEl.textContent || 'Reporte').trim();
+
+                const headRow = table.querySelector('thead tr');
+                const headers = headRow ? Array.from(headRow.children).map(th => th.textContent.trim()) : [];
+                const bodyRows = Array.from(table.querySelectorAll('tbody tr')).map(tr => Array.from(tr.children).map(td => td.textContent.trim()));
+                const footRow = table.querySelector('tfoot tr');
+                const footCells = footRow ? Array.from(footRow.children).map(td => ({ text: td.textContent.trim(), colSpan: Number(td.getAttribute('colspan')) || 1 })) : [];
+
+                if (!bodyRows.length) { toast('No hay datos para exportar', 'red'); return; }
+
+                try {
+                    const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+                    const { y: y0, marginX } = drawReportPdfHeader(doc, titulo.toUpperCase(), 0.35);
+
+                    const foot = footCells.length ? [footCells.map(c => ({ content: c.text, colSpan: c.colSpan, styles: { fontStyle: 'bold', halign: 'right' } }))] : undefined;
+
+                    doc.autoTable({
+                        startY: y0 + 6, margin: { left: marginX, right: marginX },
+                        head: [headers], body: bodyRows, foot,
+                        styles: { font: 'times', fontSize: 8.5, cellPadding: 3, lineColor: [0, 0, 0], lineWidth: 0.3, textColor: [0, 0, 0] },
+                        headStyles: { fillColor: [230, 230, 230], textColor: [0, 0, 0], fontStyle: 'bold', halign: 'center' },
+                        footStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], lineWidth: 0.3 },
+                        theme: 'grid'
+                    });
+
+                    let yFinal = doc.lastAutoTable.finalY + 20;
+                    const usableWidth = doc.internal.pageSize.getWidth() - marginX * 2;
+                    drawReportPdfSignatures(doc, yFinal, marginX, usableWidth);
+                    addPageNumbers(doc, marginX);
+
+                    const blob = doc.output('blob');
+                    downloadBlob(blob, `${titulo.replace(/\s+/g, '_')}_${todayISO()}.pdf`);
+                    toast('PDF generado', 'green');
+                } catch (e) {
+                    console.error('Error al generar PDF del reporte:', e);
+                    toast('Ocurrió un error al generar el PDF: ' + (e && e.message ? e.message : e), 'red');
+                }
+            }
+            $('#kob-dashreport-export-pdf').addEventListener('click', exportarDashReportePDF);
             $('#dash-card-productos').addEventListener('click', () => openDashReport('productos'));
             $('#dash-card-ingresos').addEventListener('click', () => openDashReport('ingresos'));
             $('#dash-card-salidas').addEventListener('click', () => openDashReport('salidas'));
