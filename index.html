@@ -6089,12 +6089,13 @@ ${bodyHtml}
                     });
                     return true;
                 }
-                // Fuera de SICAO.Desktop (Windows con WebView2): siempre se descarga el
-                // archivo directamente — así funciona igual en la app de celular, en la
-                // de PC, y en el navegador normal. Además, se intenta copiar al
-                // portapapeles por si hay una macro de Excel escuchando (el
-                // complemento), que de yapa lo auto-inserta como hoja sin que haga
-                // falta abrir el archivo descargado.
+                // Fuera de SICAO.Desktop (Windows con WebView2): siempre se intenta
+                // copiar al portapapeles por si hay una macro de Excel escuchando (el
+                // complemento). Si el link se abrió desde el complemento (lleva
+                // "origen=complemento"), NO se descarga aparte — ya le llega insertado
+                // como hoja. En cualquier otro caso (celular, PC, navegador normal),
+                // además se descarga el archivo directamente.
+                const esComplemento = new URLSearchParams(location.search).get('origen') === 'complemento';
                 try {
                     const buffer = await workbook.xlsx.writeBuffer();
                     const bytes = new Uint8Array(buffer);
@@ -6106,11 +6107,17 @@ ${bodyHtml}
                     const base64 = btoa(binario);
                     const copiado = await sicaoCopiarAlPortapapeles(base64);
 
-                    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-                    downloadBlob(blob, filename);
+                    if (!esComplemento) {
+                        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                        downloadBlob(blob, filename);
+                    }
 
                     if (typeof toast === 'function') {
-                        toast(copiado ? 'Reporte descargado (si usas el complemento de Excel, también se insertará solo).' : 'Reporte descargado', 'green');
+                        if (esComplemento) {
+                            toast(copiado ? 'Reporte enviado a Excel.' : 'No se pudo copiar el reporte; ábrelo manualmente e inténtalo de nuevo.', copiado ? 'green' : 'red');
+                        } else {
+                            toast(copiado ? 'Reporte descargado (si usas el complemento de Excel, también se insertará solo).' : 'Reporte descargado', 'green');
+                        }
                     }
                 } catch (e) {
                     console.error('No se pudo generar el reporte:', e);
