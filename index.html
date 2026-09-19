@@ -5918,6 +5918,8 @@ ${bodyHtml}
                 if (!bodyRows.length) { toast('No hay datos para exportar', 'red'); return; }
 
                 try {
+                    if (!window.jspdf || typeof window.jspdf.jsPDF !== 'function') { toast('No se pudo cargar el generador de PDF', 'red'); return; }
+                    const { jsPDF } = window.jspdf;
                     const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
                     const { y: y0, marginX } = drawReportPdfHeader(doc, titulo.toUpperCase(), 0.35);
 
