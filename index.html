@@ -1828,6 +1828,10 @@
            }
 
     </style>
+    <!-- Herramientas para importar/editar documentos Word y exportar de vuelta a Word,
+         usadas en Configuración → Documentos (Word / PDF). -->
+    <script src="https://cdn.jsdelivr.net/npm/mammoth@1.12.3/mammoth.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html-docx-js@0.3.1/dist/html-docx.js"></script>
 </head>
 <body>
     <div class="kob" id="kob-root">
@@ -2484,6 +2488,19 @@
                             <div class="kob-btn-row" id="cfg-foto-paginacion" style="justify-content:center; margin-top:16px;"></div>
                         </div>
 
+                        <div class="kob-card">
+                            <p class="kob-card-title"><span class="ic">📄</span> Documentos (Word / PDF)</p>
+                            <hr class="kob-sep-header">
+                            <p class="kob-muted-text">Sube documentos Word (.docx) o PDF para guardarlos aquí. Los Word se pueden abrir y editar dentro de SICAO (formato básico: negrita, listas, párrafos); los PDF se guardan para ver o descargar.</p>
+                            <div class="kob-search" style="max-width:420px;">
+                                <input type="file" id="cfg-doc-input" accept=".docx,.pdf">
+                            </div>
+                            <table class="kob-table" style="margin-top:14px;">
+                                <thead><tr><th>Nombre</th><th>Tipo</th><th>Subido el</th><th>Acción</th></tr></thead>
+                                <tbody id="cfg-doc-list"></tbody>
+                            </table>
+                        </div>
+
                         <div class="kob-card" id="cfg-admin-cred-card">
                             <p class="kob-card-title"><span class="ic">🔑</span> Credenciales de acceso (Administrador)</p>
                             <hr class="kob-sep-header">
@@ -2947,6 +2964,29 @@
                         <tbody id="kob-dashreport-tbody"></tbody>
                         <tfoot id="kob-dashreport-tfoot"></tfoot>
                     </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="kob-modal-overlay" id="kob-doceditor-overlay" style="z-index:175;">
+            <div class="kob-modal" style="max-width:900px;">
+                <p class="kob-modal-title" id="kob-doceditor-titlebar" style="display:flex;align-items:center;justify-content:space-between;">
+                    <span id="kob-doceditor-titulo">Editando documento</span>
+                    <button class="kob-btn" id="kob-doceditor-cerrar" style="padding:4px 12px;font-size:18px;line-height:1;font-weight:800;background:var(--red);color:#fff;border-color:var(--red);">&times;</button>
+                </p>
+                <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px; border-bottom:1px solid var(--border); padding-bottom:10px;">
+                    <button type="button" class="kob-mini-btn ghost" data-doc-cmd="bold"><b>N</b></button>
+                    <button type="button" class="kob-mini-btn ghost" data-doc-cmd="italic"><i>K</i></button>
+                    <button type="button" class="kob-mini-btn ghost" data-doc-cmd="underline"><u>S</u></button>
+                    <button type="button" class="kob-mini-btn ghost" data-doc-cmd="insertUnorderedList">• Lista</button>
+                    <button type="button" class="kob-mini-btn ghost" data-doc-cmd="insertOrderedList">1. Lista</button>
+                    <button type="button" class="kob-mini-btn ghost" data-doc-cmd="undo">↺ Deshacer</button>
+                </div>
+                <div id="kob-doceditor-contenido" contenteditable="true" style="min-height:50vh; max-height:55vh; overflow-y:auto; border:1px solid var(--border); border-radius:6px; padding:16px; background:#fff; color:#000;"></div>
+                <div class="kob-btn-row" style="margin-top:14px;">
+                    <button type="button" class="kob-btn green" id="kob-doceditor-guardar">💾 Guardar cambios</button>
+                    <button type="button" class="kob-btn blue" id="kob-doceditor-exportword">📤 Exportar como Word</button>
+                    <button type="button" class="kob-btn blue" id="kob-doceditor-exportpdf">📄 Exportar como PDF</button>
                 </div>
             </div>
         </div>
@@ -3965,6 +4005,12 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                         if (!w.salidas) w.salidas = [];
                         w.salidas.push(entry.datos);
                     }
+                } else if (entry.tipo === 'documento') {
+                    const w = state.workspaces && state.workspaces[entry.workspaceKey];
+                    if (w) {
+                        if (!w.documentos) w.documentos = [];
+                        w.documentos.push(entry.datos);
+                    }
                 }
                 state.papelera.splice(idx, 1);
                 persist();
@@ -3978,6 +4024,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                     renumerarCodigosSalidas();
                     if (typeof renderSalidas === 'function') renderSalidas();
                 }
+                if (entry.tipo === 'documento' && entry.workspaceKey === currentWorkspaceKey() && typeof renderDocumentos === 'function') renderDocumentos();
                 if (typeof renderPapelera === 'function') renderPapelera();
                 toast('Restaurado correctamente', 'green');
             }
@@ -3993,14 +4040,14 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 let lista = (state.papelera || []);
                 if (currentRole !== 'admin') {
                     // Un cliente/revendedor solo ve lo borrado dentro de su propio
-                    // espacio de trabajo (ingresos/salidas), nunca cuentas de otras personas.
-                    lista = lista.filter(e => (e.tipo === 'ingreso' || e.tipo === 'salida') && e.workspaceKey === currentWorkspaceKey());
+                    // espacio de trabajo (ingresos/salidas/documentos), nunca cuentas de otras personas.
+                    lista = lista.filter(e => (e.tipo === 'ingreso' || e.tipo === 'salida' || e.tipo === 'documento') && e.workspaceKey === currentWorkspaceKey());
                 }
                 if (!lista.length) {
                     tbody.innerHTML = `<tr><td colspan="4" class="kob-empty">La papelera está vacía.</td></tr>`;
                     return;
                 }
-                const etiquetas = { cliente: '👤 Cliente', revendedor: '🧑‍💼 Revendedor', ingreso: '📦 Ingreso', salida: '🚚 Salida' };
+                const etiquetas = { cliente: '👤 Cliente', revendedor: '🧑‍💼 Revendedor', ingreso: '📦 Ingreso', salida: '🚚 Salida', documento: '📄 Documento' };
                 tbody.innerHTML = lista.map(e => `
           <tr>
             <td>${etiquetas[e.tipo] || e.tipo}</td>
@@ -4022,6 +4069,161 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                     });
                 });
             }
+
+            /* ---------- DOCUMENTOS (Word / PDF) ----------
+               Se guardan en ws().documentos (por espacio de trabajo). Los Word
+               se convierten a HTML editable con mammoth.js al subirlos; los PDF
+               se guardan tal cual (base64), solo para ver/descargar. */
+            let docEditorActualId = null;
+            function renderDocumentos() {
+                const tbody = document.getElementById('cfg-doc-list');
+                if (!tbody || !state) return;
+                const lista = (ws().documentos || []);
+                if (!lista.length) {
+                    tbody.innerHTML = `<tr><td colspan="4" class="kob-empty">No hay documentos subidos todavía.</td></tr>`;
+                    return;
+                }
+                tbody.innerHTML = lista.map(d => `
+          <tr>
+            <td>${(d.nombre || '').replace(/</g, '&lt;')}</td>
+            <td>${d.tipo === 'word' ? '📝 Word' : '📕 PDF'}</td>
+            <td class="kob-mono">${fmtFechaHora(d.fecha)}</td>
+            <td>
+              ${d.tipo === 'word' ? `<button class="kob-mini-btn blue" data-doc-editar="${d.id}">✏️ Abrir y editar</button>` : `<button class="kob-mini-btn blue" data-doc-ver="${d.id}">👁 Ver</button>`}
+              <button class="kob-mini-btn ghost" data-doc-descargar="${d.id}">📥 Descargar</button>
+              <button class="kob-mini-btn red" data-doc-borrar="${d.id}">Eliminar</button>
+            </td>
+          </tr>`).join('');
+                tbody.querySelectorAll('[data-doc-editar]').forEach(b => {
+                    b.addEventListener('click', () => abrirEditorDocumento(b.getAttribute('data-doc-editar')));
+                });
+                tbody.querySelectorAll('[data-doc-ver]').forEach(b => {
+                    b.addEventListener('click', () => {
+                        const d = (ws().documentos || []).find(x => x.id === b.getAttribute('data-doc-ver'));
+                        if (d) window.open(d.archivoBase64, '_blank');
+                    });
+                });
+                tbody.querySelectorAll('[data-doc-descargar]').forEach(b => {
+                    b.addEventListener('click', () => {
+                        const d = (ws().documentos || []).find(x => x.id === b.getAttribute('data-doc-descargar'));
+                        if (!d) return;
+                        if (d.tipo === 'pdf') {
+                            descargarDataUrl(d.archivoBase64, d.nombre);
+                        } else {
+                            const blob = htmlDocx.asBlob('<html><head><meta charset="utf-8"></head><body>' + d.contenidoHTML + '</body></html>');
+                            downloadBlob(blob, d.nombre.replace(/\.docx$/i, '') + '.docx');
+                        }
+                    });
+                });
+                tbody.querySelectorAll('[data-doc-borrar]').forEach(b => {
+                    b.addEventListener('click', async () => {
+                        const id = b.getAttribute('data-doc-borrar');
+                        const d = (ws().documentos || []).find(x => x.id === id);
+                        if (!d) return;
+                        const ok = await askConfirm(`¿Eliminar "${d.nombre}"? Se puede restaurar después desde la Papelera de reciclaje.`);
+                        if (!ok) return;
+                        ws().documentos = (ws().documentos || []).filter(x => x.id !== id);
+                        moverAPapelera('documento', d.nombre, d, { workspaceKey: currentWorkspaceKey() });
+                        persist();
+                        renderDocumentos();
+                        toast('Documento movido a la papelera', 'red');
+                    });
+                });
+            }
+            $('#cfg-doc-input').addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const nombre = file.name;
+                const esWord = /\.docx$/i.test(nombre);
+                const esPdf = /\.pdf$/i.test(nombre);
+                if (!esWord && !esPdf) {
+                    toast('Solo se aceptan archivos .docx o .pdf', 'red');
+                    e.target.value = '';
+                    return;
+                }
+                try {
+                    if (esWord) {
+                        if (!window.mammoth) { toast('No se pudo cargar el conversor de Word. Revisa tu conexión e inténtalo de nuevo.', 'red'); return; }
+                        const arrayBuffer = await file.arrayBuffer();
+                        const resultado = await mammoth.convertToHtml({ arrayBuffer });
+                        if (!ws().documentos) ws().documentos = [];
+                        ws().documentos.unshift({
+                            id: 'doc-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8),
+                            nombre, tipo: 'word',
+                            contenidoHTML: resultado.value,
+                            fecha: new Date().toISOString()
+                        });
+                    } else {
+                        const dataUrl = await new Promise((resolve, reject) => {
+                            const reader = new FileReader();
+                            reader.onload = () => resolve(reader.result);
+                            reader.onerror = reject;
+                            reader.readAsDataURL(file);
+                        });
+                        if (!ws().documentos) ws().documentos = [];
+                        ws().documentos.unshift({
+                            id: 'doc-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8),
+                            nombre, tipo: 'pdf',
+                            archivoBase64: dataUrl,
+                            fecha: new Date().toISOString()
+                        });
+                    }
+                    persist();
+                    renderDocumentos();
+                    toast('Documento subido correctamente', 'green');
+                } catch (err) {
+                    console.error('Error al subir documento:', err);
+                    toast('No se pudo procesar el archivo: ' + (err && err.message ? err.message : err), 'red');
+                }
+                e.target.value = '';
+            });
+            function abrirEditorDocumento(id) {
+                const d = (ws().documentos || []).find(x => x.id === id);
+                if (!d) return;
+                docEditorActualId = id;
+                $('#kob-doceditor-titulo').textContent = 'Editando: ' + d.nombre;
+                document.getElementById('kob-doceditor-contenido').innerHTML = d.contenidoHTML || '';
+                $('#kob-doceditor-overlay').classList.add('show');
+            }
+            $('#kob-doceditor-cerrar').addEventListener('click', () => {
+                $('#kob-doceditor-overlay').classList.remove('show');
+                docEditorActualId = null;
+            });
+            $$('#kob-doceditor-overlay [data-doc-cmd]').forEach(b => {
+                b.addEventListener('click', () => {
+                    document.getElementById('kob-doceditor-contenido').focus();
+                    document.execCommand(b.getAttribute('data-doc-cmd'), false, null);
+                });
+            });
+            $('#kob-doceditor-guardar').addEventListener('click', () => {
+                if (!docEditorActualId) return;
+                const d = (ws().documentos || []).find(x => x.id === docEditorActualId);
+                if (!d) return;
+                d.contenidoHTML = document.getElementById('kob-doceditor-contenido').innerHTML;
+                persist();
+                toast('Cambios guardados', 'green');
+            });
+            $('#kob-doceditor-exportword').addEventListener('click', () => {
+                if (!window.htmlDocx) { toast('No se pudo cargar el generador de Word. Revisa tu conexión e inténtalo de nuevo.', 'red'); return; }
+                const html = document.getElementById('kob-doceditor-contenido').innerHTML;
+                const d = (ws().documentos || []).find(x => x.id === docEditorActualId);
+                const nombreArchivo = (d ? d.nombre.replace(/\.docx$/i, '') : 'documento') + '.docx';
+                const blob = htmlDocx.asBlob('<html><head><meta charset="utf-8"></head><body>' + html + '</body></html>');
+                downloadBlob(blob, nombreArchivo);
+                toast('Word exportado', 'green');
+            });
+            $('#kob-doceditor-exportpdf').addEventListener('click', () => {
+                const html = document.getElementById('kob-doceditor-contenido').innerHTML;
+                const d = (ws().documentos || []).find(x => x.id === docEditorActualId);
+                const ventana = window.open('', '_blank');
+                if (!ventana) { toast('El navegador bloqueó la ventana de impresión. Permite ventanas emergentes e inténtalo de nuevo.', 'red'); return; }
+                ventana.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${(d ? d.nombre : 'Documento')}</title>
+                    <style>body{font-family:Arial,sans-serif;font-size:12pt;padding:30px;color:#000;} table{border-collapse:collapse;} td,th{border:1px solid #000;padding:4px;}</style>
+                    </head><body>${html}</body></html>`);
+                ventana.document.close();
+                setTimeout(() => { ventana.focus(); ventana.print(); }, 400);
+            });
+
             function crearAutoBackup() {
                 try {
                     if (currentRole !== 'admin') return;
@@ -8292,6 +8494,7 @@ ${bodyHtml}
             function renderConfigPanel() {
                 if (!state) return;
                 renderPapelera();
+                renderDocumentos();
                 renderCfgCategorias();
                 renderCfgUnidades();
                 fotoPaginaActual = 1;
