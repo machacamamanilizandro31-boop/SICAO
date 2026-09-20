@@ -1944,6 +1944,10 @@
                         <div class="who" id="kob-who"></div>
                     </div>
                 </div>
+                <div id="kob-verComo-banner" style="display:none; align-items:center; justify-content:space-between; background:var(--blue); color:#fff; padding:8px 20px; font-size:13px; font-weight:600;">
+                    <span class="kob-verComo-texto">👁 Viendo el espacio de trabajo de:</span>
+                    <button type="button" id="kob-verComo-volver" class="kob-btn" style="background:#fff; color:var(--blue); border:none; padding:4px 14px; font-size:12px;">← Volver a mi cuenta</button>
+                </div>
                 <div class="kob-content">
 
                     <!-- INICIO -->
@@ -3634,6 +3638,9 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 };
             }
             function currentWorkspaceKey() {
+                if (currentRole === 'admin' && adminWorkspaceOverride) {
+                    return (adminWorkspaceOverride.tipo === 'operador' ? 'operator:' : 'reseller:') + adminWorkspaceOverride.id;
+                }
                 if (currentRole === 'operador' && currentOperatorId != null) return 'operator:' + currentOperatorId;
                 if (currentRole === 'revendedor' && currentOperatorId != null) return 'reseller:' + currentOperatorId;
                 return 'admin';
@@ -4315,6 +4322,10 @@ ${bodyHtml}
             let currentRole = 'admin';
             let currentOperatorId = null;
             let currentAccountKind = null; // 'operador' | 'revendedor' | null
+            // Cuando el admin entra a "ver como" un cliente/revendedor, esto guarda
+            // a quién está viendo — sin cambiar currentRole, así el admin conserva
+            // su menú y permisos completos, solo cambian los datos que se muestran.
+            let adminWorkspaceOverride = null; // { tipo: 'operador'|'revendedor', id, nombre } | null
             let sessionMonitorTimer = null;
 
             function startSessionMonitor() {
@@ -4420,6 +4431,45 @@ ${bodyHtml}
                     }
                 }
             }
+
+            // Le permite al administrador entrar a ver el espacio de trabajo de un
+            // cliente o revendedor sin necesitar su contraseña y sin que cuente
+            // contra su límite de dispositivos — solo cambia qué datos se muestran,
+            // el admin sigue siendo admin (mismo menú, mismos permisos).
+            function entrarComoCliente(tipo, id, nombre) {
+                if (currentRole !== 'admin') return;
+                adminWorkspaceOverride = { tipo, id, nombre };
+                $('#kob-who').textContent = `Usuario: admin — viendo como ${nombre}`;
+                actualizarBannerVerComo();
+                hydrateUI();
+                showPanel('inicio');
+                renderInicio();
+                $$('.kob-nav-item[data-panel]').forEach(b => b.classList.remove('active'));
+                $('[data-panel="inicio"].kob-nav-item').classList.add('active');
+                toast('Viendo el espacio de trabajo de "' + nombre + '"', 'green');
+            }
+            function volverAMiCuenta() {
+                adminWorkspaceOverride = null;
+                $('#kob-who').textContent = 'Usuario: admin';
+                actualizarBannerVerComo();
+                hydrateUI();
+                showPanel('inicio');
+                renderInicio();
+                $$('.kob-nav-item[data-panel]').forEach(b => b.classList.remove('active'));
+                $('[data-panel="inicio"].kob-nav-item').classList.add('active');
+                toast('De vuelta en tu cuenta', 'green');
+            }
+            function actualizarBannerVerComo() {
+                const el = document.getElementById('kob-verComo-banner');
+                if (!el) return;
+                if (adminWorkspaceOverride) {
+                    el.style.display = 'flex';
+                    el.querySelector('.kob-verComo-texto').textContent = '👁 Viendo el espacio de trabajo de: ' + adminWorkspaceOverride.nombre;
+                } else {
+                    el.style.display = 'none';
+                }
+            }
+            document.getElementById('kob-verComo-volver').addEventListener('click', volverAMiCuenta);
 
             function showLicenseScreen(pendingUsername) {
                 $('#kob-screen-login').style.display = 'none';
@@ -4659,6 +4709,7 @@ ${bodyHtml}
                 stopSessionMonitor();
                 currentOperatorId = null;
                 currentAccountKind = null;
+                adminWorkspaceOverride = null;
                 $('#kob-shell').classList.remove('show');
                 $('#kob-screen-licencia').style.display = 'none';
                 $('#kob-screen-login').style.display = 'flex';
@@ -8378,6 +8429,8 @@ ${bodyHtml}
                 const removeAttr = 'data-' + cfg.attr + '-remove';
                 const histAttr = 'data-' + cfg.attr + '-hist';
                 const freeDevAttr = 'data-' + cfg.attr + '-freedev';
+                const verAttr = 'data-' + cfg.attr + '-ver';
+                const tipoCuenta = cfg.listKey === 'operators' ? 'operador' : 'revendedor';
                 tbody.innerHTML = list.map(o => {
                     const vencido = isOperatorExpired(o);
                     const tipoTxt = licenseTipoLabel(o.licenseType || 'mensual');
@@ -8405,6 +8458,7 @@ ${bodyHtml}
             <td class="kob-mono" style="${vencido ? 'color:var(--red);' : ''}">${licTxt}</td>
             <td class="kob-mono">${dispTxt}</td>
             <td>
+              ${currentRole === 'admin' && !adminWorkspaceOverride ? `<button class="kob-mini-btn green" ${verAttr}="${o.id}">👁 Ver su espacio</button>` : ''}
               <button class="kob-mini-btn blue" ${keyAttr}="${o.id}">Ver clave</button>
               <button class="kob-mini-btn blue" ${renewAttr}="${o.id}">Renovar licencia</button>
               <button class="kob-mini-btn blue" ${resetPassAttr}="${o.id}">Restablecer contraseña</button>
@@ -8416,6 +8470,14 @@ ${bodyHtml}
             </td>
           </tr>`;
                 }).join('');
+                tbody.querySelectorAll('[' + verAttr + ']').forEach(b => {
+                    b.addEventListener('click', () => {
+                        const id = b.getAttribute(verAttr);
+                        const op = (state[cfg.listKey] || []).find(o => String(o.id) === String(id));
+                        if (!op) return;
+                        entrarComoCliente(tipoCuenta, op.id, op.username);
+                    });
+                });
                 tbody.querySelectorAll('[' + freeDevAttr + ']').forEach(b => {
                     b.addEventListener('click', async () => {
                         const id = b.getAttribute(freeDevAttr);
