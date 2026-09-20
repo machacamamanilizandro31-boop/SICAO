@@ -4171,6 +4171,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                         moverAPapelera('documento', d.nombre, d, { workspaceKey: currentWorkspaceKey() });
                         persist();
                         renderDocumentos();
+                        renderPapelera();
                         toast('Documento movido a la papelera', 'red');
                     });
                 });
@@ -5556,7 +5557,7 @@ ${bodyHtml}
                         ws().ingresos = ws().ingresos.filter(m => m.id != b.dataset.del);
                         renumerarCodigosIngresos();
                         if (item) moverAPapelera('ingreso', (item.nombre || item.codigo || ('#' + item.id)), item, { workspaceKey: currentWorkspaceKey() });
-                        persist(); renderIngresos(); toast('Registro movido a la papelera', 'red');
+                        persist(); renderIngresos(); renderPapelera(); toast('Registro movido a la papelera', 'red');
                     });
                 });
                 tbody.querySelectorAll('[data-edit]').forEach(b => {
@@ -6100,7 +6101,7 @@ ${bodyHtml}
                         ws().salidas = ws().salidas.filter(s => s.id != b.dataset.del);
                         renumerarCodigosSalidas();
                         if (item) moverAPapelera('salida', (item.nombre || item.codigo || ('#' + item.id)), item, { workspaceKey: currentWorkspaceKey() });
-                        persist(); renderSalidas(); toast('Registro movido a la papelera', 'red');
+                        persist(); renderSalidas(); renderPapelera(); toast('Registro movido a la papelera', 'red');
                     });
                 });
                 tbody.querySelectorAll('[data-edit]').forEach(b => {
@@ -9049,6 +9050,7 @@ ${bodyHtml}
                         moverAPapelera(cfg.listKey === 'resellers' ? 'revendedor' : 'cliente', op ? op.username : ('#' + id), op, { workspaceSnapshot: wsSnapshot });
                         persist();
                         cfg.render();
+                        renderPapelera();
                         toast(cfg.labelCapital + ' movido a la papelera', 'red');
                     });
                 });
