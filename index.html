@@ -2413,6 +2413,16 @@
                         </div>
                     </div>
                     <div class="kob-panel" data-panel="config">
+                        <div class="kob-card">
+                            <p class="kob-card-title"><span class="ic">🗑️</span> Papelera de reciclaje</p>
+                            <hr class="kob-sep-header">
+                            <p class="kob-muted-text">Lo que borres (clientes, revendedores, ingresos, salidas) queda aquí guardado por si necesitas recuperarlo.</p>
+                            <table class="kob-table">
+                                <thead><tr><th>Tipo</th><th>Descripción</th><th>Borrado el</th><th>Acción</th></tr></thead>
+                                <tbody id="cfg-papelera-list"></tbody>
+                            </table>
+                        </div>
+
                         <div id="cfg-superadmin-top">
                         <div class="kob-card">
                             <p class="kob-card-title"><span class="ic">🏷️</span> Categorías de materiales</p>
@@ -3906,6 +3916,112 @@ https://github.com/nodeca/pako/blob/main/LICENSE
                 try { localStorage.setItem('kardex-obra-state-v1', JSON.stringify(state)); } catch (e) { }
                 sicaoSincronizarEnNube();
             }
+
+            /* ---------- PAPELERA DE RECICLAJE ----------
+               Un solo listado (state.papelera) para clientes, revendedores,
+               ingresos y salidas borrados. Cada entrada guarda lo necesario para
+               restaurarlo exactamente como estaba. No se persiste sola: quien
+               borra algo debe llamar a moverAPapelera() y luego persist(). */
+            function moverAPapelera(tipo, descripcion, datos, extra) {
+                if (!state.papelera) state.papelera = [];
+                state.papelera.unshift({
+                    id: 'trash-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8),
+                    tipo, descripcion, datos,
+                    fecha: new Date().toISOString(),
+                    workspaceKey: (extra && extra.workspaceKey) || null,
+                    workspaceSnapshot: (extra && extra.workspaceSnapshot) || null
+                });
+                // No conservamos más de 200 elementos borrados, para no inflar el archivo sin límite.
+                if (state.papelera.length > 200) state.papelera.length = 200;
+            }
+            function restaurarDePapelera(entryId) {
+                if (!state.papelera) return;
+                const idx = state.papelera.findIndex(e => e.id === entryId);
+                if (idx === -1) return;
+                const entry = state.papelera[idx];
+                if (entry.tipo === 'cliente') {
+                    if (!state.operators) state.operators = [];
+                    state.operators.push(entry.datos);
+                    if (entry.workspaceSnapshot) {
+                        if (!state.workspaces) state.workspaces = {};
+                        state.workspaces['operator:' + entry.datos.id] = entry.workspaceSnapshot;
+                    }
+                } else if (entry.tipo === 'revendedor') {
+                    if (!state.resellers) state.resellers = [];
+                    state.resellers.push(entry.datos);
+                    if (entry.workspaceSnapshot) {
+                        if (!state.workspaces) state.workspaces = {};
+                        state.workspaces['reseller:' + entry.datos.id] = entry.workspaceSnapshot;
+                    }
+                } else if (entry.tipo === 'ingreso') {
+                    const w = state.workspaces && state.workspaces[entry.workspaceKey];
+                    if (w) {
+                        if (!w.ingresos) w.ingresos = [];
+                        w.ingresos.push(entry.datos);
+                    }
+                } else if (entry.tipo === 'salida') {
+                    const w = state.workspaces && state.workspaces[entry.workspaceKey];
+                    if (w) {
+                        if (!w.salidas) w.salidas = [];
+                        w.salidas.push(entry.datos);
+                    }
+                }
+                state.papelera.splice(idx, 1);
+                persist();
+                if (entry.tipo === 'cliente' && typeof renderCfgOperators === 'function') renderCfgOperators();
+                if (entry.tipo === 'revendedor' && typeof renderCfgResellers === 'function') renderCfgResellers();
+                if (entry.tipo === 'ingreso' && entry.workspaceKey === currentWorkspaceKey()) {
+                    renumerarCodigosIngresos();
+                    if (typeof renderIngresos === 'function') renderIngresos();
+                }
+                if (entry.tipo === 'salida' && entry.workspaceKey === currentWorkspaceKey()) {
+                    renumerarCodigosSalidas();
+                    if (typeof renderSalidas === 'function') renderSalidas();
+                }
+                if (typeof renderPapelera === 'function') renderPapelera();
+                toast('Restaurado correctamente', 'green');
+            }
+            function eliminarDePapeleraDefinitivo(entryId) {
+                if (!state.papelera) return;
+                state.papelera = state.papelera.filter(e => e.id !== entryId);
+                persist();
+                if (typeof renderPapelera === 'function') renderPapelera();
+            }
+            function renderPapelera() {
+                const tbody = document.getElementById('cfg-papelera-list');
+                if (!tbody) return;
+                let lista = (state.papelera || []);
+                if (currentRole !== 'admin') {
+                    // Un cliente/revendedor solo ve lo borrado dentro de su propio
+                    // espacio de trabajo (ingresos/salidas), nunca cuentas de otras personas.
+                    lista = lista.filter(e => (e.tipo === 'ingreso' || e.tipo === 'salida') && e.workspaceKey === currentWorkspaceKey());
+                }
+                if (!lista.length) {
+                    tbody.innerHTML = `<tr><td colspan="4" class="kob-empty">La papelera está vacía.</td></tr>`;
+                    return;
+                }
+                const etiquetas = { cliente: '👤 Cliente', revendedor: '🧑‍💼 Revendedor', ingreso: '📦 Ingreso', salida: '🚚 Salida' };
+                tbody.innerHTML = lista.map(e => `
+          <tr>
+            <td>${etiquetas[e.tipo] || e.tipo}</td>
+            <td>${(e.descripcion || '').replace(/</g, '&lt;')}</td>
+            <td class="kob-mono">${fmtFechaHora(e.fecha)}</td>
+            <td>
+              <button class="kob-mini-btn green" data-papelera-restaurar="${e.id}">↩ Restaurar</button>
+              <button class="kob-mini-btn red" data-papelera-borrar="${e.id}">Eliminar definitivo</button>
+            </td>
+          </tr>`).join('');
+                tbody.querySelectorAll('[data-papelera-restaurar]').forEach(b => {
+                    b.addEventListener('click', () => restaurarDePapelera(b.getAttribute('data-papelera-restaurar')));
+                });
+                tbody.querySelectorAll('[data-papelera-borrar]').forEach(b => {
+                    b.addEventListener('click', async () => {
+                        const ok = await askConfirm('¿Eliminar esto definitivamente de la papelera? Ya no se podrá recuperar.');
+                        if (!ok) return;
+                        eliminarDePapeleraDefinitivo(b.getAttribute('data-papelera-borrar'));
+                    });
+                });
+            }
             function crearAutoBackup() {
                 try {
                     if (currentRole !== 'admin') return;
@@ -5128,11 +5244,13 @@ ${bodyHtml}
 
                 tbody.querySelectorAll('[data-del]').forEach(b => {
                     b.addEventListener('click', async () => {
-                        const ok = await askConfirm('¿Eliminar este material del listado? Esta acción no se puede deshacer.');
+                        const ok = await askConfirm('¿Eliminar este material del listado? Se puede restaurar después desde la Papelera de reciclaje.');
                         if (!ok) return;
+                        const item = (ws().ingresos || []).find(m => m.id == b.dataset.del);
                         ws().ingresos = ws().ingresos.filter(m => m.id != b.dataset.del);
                         renumerarCodigosIngresos();
-                        persist(); renderIngresos(); toast('Registro eliminado', 'red');
+                        if (item) moverAPapelera('ingreso', (item.nombre || item.codigo || ('#' + item.id)), item, { workspaceKey: currentWorkspaceKey() });
+                        persist(); renderIngresos(); toast('Registro movido a la papelera', 'red');
                     });
                 });
                 tbody.querySelectorAll('[data-edit]').forEach(b => {
@@ -5670,11 +5788,13 @@ ${bodyHtml}
 
                 tbody.querySelectorAll('[data-del]').forEach(b => {
                     b.addEventListener('click', async () => {
-                        const ok = await askConfirm('¿Eliminar esta salida del listado? Esta acción no se puede deshacer.');
+                        const ok = await askConfirm('¿Eliminar esta salida del listado? Se puede restaurar después desde la Papelera de reciclaje.');
                         if (!ok) return;
+                        const item = (ws().salidas || []).find(s => s.id == b.dataset.del);
                         ws().salidas = ws().salidas.filter(s => s.id != b.dataset.del);
                         renumerarCodigosSalidas();
-                        persist(); renderSalidas(); toast('Registro eliminado', 'red');
+                        if (item) moverAPapelera('salida', (item.nombre || item.codigo || ('#' + item.id)), item, { workspaceKey: currentWorkspaceKey() });
+                        persist(); renderSalidas(); toast('Registro movido a la papelera', 'red');
                     });
                 });
                 tbody.querySelectorAll('[data-edit]').forEach(b => {
@@ -8171,6 +8291,7 @@ ${bodyHtml}
             /* ---------- CONFIGURACIÓN ---------- */
             function renderConfigPanel() {
                 if (!state) return;
+                renderPapelera();
                 renderCfgCategorias();
                 renderCfgUnidades();
                 fotoPaginaActual = 1;
@@ -8612,16 +8733,16 @@ ${bodyHtml}
                     b.addEventListener('click', async () => {
                         const id = b.getAttribute(removeAttr);
                         const op = (state[cfg.listKey] || []).find(o => String(o.id) === String(id));
-                        const ok = await askConfirm(`¿ELIMINAR definitivamente ${cfg.articulo} "${op ? op.username : ''}"? Se borrará la cuenta y su licencia, y no podrá deshacerse.`);
+                        const ok = await askConfirm(`¿Eliminar ${cfg.articulo} "${op ? op.username : ''}"? Se puede restaurar después desde la Papelera de reciclaje.`);
                         if (!ok) return;
                         state[cfg.listKey] = (state[cfg.listKey] || []).filter(o => String(o.id) !== String(id));
-                        if (state.workspaces) {
-                            const wsPrefix = cfg.listKey === 'resellers' ? 'reseller:' : 'operator:';
-                            delete state.workspaces[wsPrefix + id];
-                        }
+                        const wsPrefix = cfg.listKey === 'resellers' ? 'reseller:' : 'operator:';
+                        const wsSnapshot = (state.workspaces && state.workspaces[wsPrefix + id]) || null;
+                        if (state.workspaces) delete state.workspaces[wsPrefix + id];
+                        moverAPapelera(cfg.listKey === 'resellers' ? 'revendedor' : 'cliente', op ? op.username : ('#' + id), op, { workspaceSnapshot: wsSnapshot });
                         persist();
                         cfg.render();
-                        toast(cfg.labelCapital + ' eliminado', 'red');
+                        toast(cfg.labelCapital + ' movido a la papelera', 'red');
                     });
                 });
             }
