@@ -4432,26 +4432,33 @@ ${bodyHtml}
                 }
             }
 
-            // Le permite al administrador entrar a ver el espacio de trabajo de un
-            // cliente o revendedor sin necesitar su contraseña y sin que cuente
-            // contra su límite de dispositivos — solo cambia qué datos se muestran,
-            // el admin sigue siendo admin (mismo menú, mismos permisos).
+            // Le permite al administrador entrar completamente como un cliente o
+            // revendedor (viendo exactamente lo que esa cuenta vería, Configuración
+            // incluida) sin necesitar su contraseña y sin que cuente contra su
+            // límite de dispositivos. Guarda su propia sesión para poder volver.
             function entrarComoCliente(tipo, id, nombre) {
-                if (currentRole !== 'admin') return;
-                adminWorkspaceOverride = { tipo, id, nombre };
+                if (currentRole !== 'admin' || adminWorkspaceOverride) return;
+                adminWorkspaceOverride = { tipo, id, nombre, rolAnterior: currentRole, operatorIdAnterior: currentOperatorId };
+                currentRole = tipo; // 'operador' | 'revendedor'
+                currentOperatorId = id;
                 $('#kob-who').textContent = `Usuario: admin — viendo como ${nombre}`;
                 actualizarBannerVerComo();
+                applyRolePermissions();
                 hydrateUI();
                 showPanel('inicio');
                 renderInicio();
                 $$('.kob-nav-item[data-panel]').forEach(b => b.classList.remove('active'));
                 $('[data-panel="inicio"].kob-nav-item').classList.add('active');
-                toast('Viendo el espacio de trabajo de "' + nombre + '"', 'green');
+                toast('Viendo como "' + nombre + '"', 'green');
             }
             function volverAMiCuenta() {
+                if (!adminWorkspaceOverride) return;
+                currentRole = adminWorkspaceOverride.rolAnterior;
+                currentOperatorId = adminWorkspaceOverride.operatorIdAnterior;
                 adminWorkspaceOverride = null;
                 $('#kob-who').textContent = 'Usuario: admin';
                 actualizarBannerVerComo();
+                applyRolePermissions();
                 hydrateUI();
                 showPanel('inicio');
                 renderInicio();
