@@ -7369,42 +7369,30 @@ ${bodyHtml}
                 y += titleH;
 
                 const codeW = w * 0.25, dateW = w * 0.175, projectW = w - codeW - dateW;
-                const projectText = `NOMBRE DEL PROYECTO: ${ws().project.nombre || '—'}`;
+                const projectName2 = String(ws().project.nombre || '—');
                 kxPdfFont(doc, false, 12);
-                const projectLines = doc.splitTextToSize(projectText, projectW - 8);
-                const infoH = Math.max(34, projectLines.length * 13 + 7);
+                const projectLines = doc.splitTextToSize(projectName2, projectW - 8);
+
+                // Fila de encabezados: CODIGO DEL PROYECTO | NOMBRE DEL PROYECTO | FECHA
+                const headH = 18;
+                kxPdfBox(doc, x, y, codeW, headH);
+                kxPdfBox(doc, x + codeW, y, projectW, headH);
+                kxPdfBox(doc, x + codeW + projectW, y, dateW, headH);
+                kxPdfText(doc, 'CODIGO DEL PROYECTO', x + codeW / 2, y + 13, { bold: true, size: 12, align: 'center' });
+                kxPdfText(doc, 'NOMBRE DEL PROYECTO', x + codeW + projectW / 2, y + 13, { bold: true, size: 12, align: 'center' });
+                kxPdfText(doc, 'FECHA', x + codeW + projectW + dateW / 2, y + 13, { bold: true, size: 12, align: 'center' });
+                y += headH;
+
+                // Fila de valores, debajo de cada encabezado.
+                const infoH = Math.max(24, projectLines.length * 13 + 7);
                 kxPdfBox(doc, x, y, codeW, infoH);
                 kxPdfBox(doc, x + codeW, y, projectW, infoH);
                 kxPdfBox(doc, x + codeW + projectW, y, dateW, infoH);
-                // Igual al formato original: la etiqueta va en negrita y el dato en peso normal.
-                const codeLabel = 'CODIGO DEL PROYECTO:';
-                kxPdfText(doc, codeLabel, x + 3, y + 15, { bold: true, size: 12 });
                 kxPdfFont(doc, false, 12);
-                doc.text(String(ws().project.codigo || '—'), x + 3 + doc.getTextWidth(codeLabel + ' '), y + 15);
-
-                // NOMBRE DEL PROYECTO debe ir en negrita, exactamente como en la plantilla.
-                const px = x + codeW + 3, py = y + 14, pMax = projectW - 6;
-                const pLabel = 'NOMBRE DEL PROYECTO:';
-                kxPdfText(doc, pLabel, px, py, { bold: true, size: 12 });
-                kxPdfFont(doc, false, 12);
-                const labelW = doc.getTextWidth(pLabel + ' ');
-                const pName = String(ws().project.nombre || '—');
-                const firstParts = doc.splitTextToSize(pName, Math.max(20, pMax - labelW));
-                if (firstParts.length) {
-                    doc.text(firstParts[0], px + labelW, py);
-                    if (firstParts.length > 1) {
-                        const restText = firstParts.slice(1).join(' ');
-                        const restLines = doc.splitTextToSize(restText, pMax);
-                        restLines.forEach((ln, ii) => doc.text(ln, px, py + 13 * (ii + 1)));
-                    }
-                }
-                // FECHA: en el original la etiqueta y el rango están separados por una línea horizontal.
-                const dateX = x + codeW + projectW;
-                const dateSplitY = y + 20;
-                kxPdfText(doc, 'FECHA', dateX + dateW / 2, y + 14, { bold: true, size: 12, align: 'center' });
-                doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.25);
-                doc.line(dateX, dateSplitY, dateX + dateW, dateSplitY);
-                kxPdfText(doc, `${fmtFecha(desde) || 'Inicio'}  AL  ${fmtFecha(hasta) || 'Hoy'}`, dateX + dateW / 2, dateSplitY + 15, { size: 12, align: 'center', maxWidth: dateW - 4 });
+                kxPdfText(doc, String(ws().project.codigo || '—'), x + codeW / 2, y + infoH / 2 + 4, { size: 12, align: 'center' });
+                const py = y + 14, pMax = projectW - 8;
+                projectLines.forEach((ln, ii) => doc.text(ln, x + codeW + 4, py + 13 * ii));
+                kxPdfText(doc, `${fmtFecha(desde) || 'Inicio'}  AL  ${fmtFecha(hasta) || 'Hoy'}`, x + codeW + projectW + dateW / 2, y + infoH / 2 + 4, { size: 12, align: 'center', maxWidth: dateW - 4 });
                 y += infoH;
 
                 const respH = 54;
@@ -7567,16 +7555,20 @@ ${bodyHtml}
                 s.mergeCells(1,3,1,10);const projTitleCell=s.getCell(1,3);projTitleCell.value=projTitleText;projTitleCell.font=kxXFont(true,11);projTitleCell.alignment={vertical:'middle',horizontal:'left',wrapText:true};
                 s.getRow(1).height=Math.max(55,logoH+5,kxEstimateLines(projTitleText,projTitleWidth)*17+10);
                 r=2;kxMergeStyle(s,r,1,10,'CONTROL DE MATERIALES',true,null,'center');s.getCell(r,1).font=kxXFont(true,16);s.getRow(r).height=25;r++;
-                // FECHA separada del rango por una línea, igual al formato original.
-                s.mergeCells(r,1,r+1,3); const codeCell=s.getCell(r,1); const codeText=`CODIGO DEL PROYECTO: ${ws().project.codigo||'—'}`; codeCell.value=codeText; kxXStyle(codeCell,true,null,'left'); codeCell.alignment={horizontal:'left',vertical:'middle',wrapText:true};
-                s.mergeCells(r,4,r+1,8); const projectCell=s.getCell(r,4); const projectText=`NOMBRE DEL PROYECTO: ${ws().project.nombre||'—'}`; projectCell.value=projectText; kxXStyle(projectCell,true,null,'left');
+                // Fila de encabezados: CODIGO DEL PROYECTO | NOMBRE DEL PROYECTO | FECHA
+                kxMergeStyle(s,r,1,3,'CODIGO DEL PROYECTO',true,null,'center');
+                kxMergeStyle(s,r,4,8,'NOMBRE DEL PROYECTO',true,null,'center');
                 kxMergeStyle(s,r,9,10,'FECHA',true,null,'center');
-                kxMergeStyle(s,r+1,9,10,`${fmtFecha(desde)||'Inicio'}  AL  ${fmtFecha(hasta)||'Hoy'}`,false,null,'center');
+                s.getRow(r).height=18; r++;
+                // Fila de valores, debajo de cada encabezado.
+                s.mergeCells(r,1,r,3); const codeCell=s.getCell(r,1); const codeText=String(ws().project.codigo||'—'); codeCell.value=codeText; kxXStyle(codeCell,false,null,'center');
+                s.mergeCells(r,4,r,8); const projectCell=s.getCell(r,4); const projectText=String(ws().project.nombre||'—'); projectCell.value=projectText; kxXStyle(projectCell,false,null,'justify');
+                kxMergeStyle(s,r,9,10,`${fmtFecha(desde)||'Inicio'}  AL  ${fmtFecha(hasta)||'Hoy'}`,false,null,'center');
                 // Altura suficiente para que el nombre del proyecto Y el código (por largos que sean) nunca queden ocultos ni con letra reducida.
                 const projectWidth=KX_X_COLW.slice(3,8).reduce((a,b)=>a+b,0);
                 const codeWidth=KX_X_COLW.slice(0,3).reduce((a,b)=>a+b,0);
-                const projectTotalH=Math.max(48,kxEstimateLines(projectText,projectWidth)*17+18,kxEstimateLines(codeText,codeWidth)*17+18);
-                s.getRow(r).height=projectTotalH/2; s.getRow(r+1).height=projectTotalH/2; r+=2;
+                s.getRow(r).height=Math.max(20,kxEstimateLines(projectText,projectWidth)*17+6,kxEstimateLines(codeText,codeWidth)*17+6);
+                r++;
                 // Bloque RESPONSABLES sin líneas internas: solo el contorno exterior del recuadro
                 // (arriba en la 1ra fila, abajo en la 3ra, izquierda/derecha en las tres), igual al formato oficial.
                 const KX_BLACK={style:'thin',color:{argb:'FF000000'}};
