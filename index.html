@@ -7571,9 +7571,21 @@ ${bodyHtml}
                 kxMergeStyle(s,r+1,9,10,`${fmtFecha(desde)||'Inicio'}  AL  ${fmtFecha(hasta)||'Hoy'}`,false,null,'center');
                 // Altura suficiente para que el código del proyecto nunca quede oculto por el ajuste de texto.
                 s.getRow(r).height=24; s.getRow(r+1).height=24; r+=2;
-                kxMergeStyle(s,r,1,10,'RESPONSABLES.',true,null,'left');s.getCell(r,1).font={...kxXFont(true,11),underline:true};r++;
-                kxMergeStyle(s,r,1,5,`SUPERVISOR DE OBRA : ${ws().project.sup||'—'}`,true,null,'left');kxMergeStyle(s,r,6,10,`ADMINISTRADOR DE OBRA : ${ws().project.adm||'—'}`,true,null,'left');s.getRow(r).height=18;r++;
-                kxMergeStyle(s,r,1,5,`RESIDENTE DE OBRA : ${ws().project.res||'—'}`,true,null,'left');kxMergeStyle(s,r,6,10,`ALMACENERO (A) : ${ws().project.alm||'—'}`,true,null,'left');s.getRow(r).height=18;r++;
+                // Bloque RESPONSABLES sin líneas internas: solo el contorno exterior del recuadro
+                // (arriba en la 1ra fila, abajo en la 3ra, izquierda/derecha en las tres), igual al formato oficial.
+                const KX_BLACK={style:'thin',color:{argb:'FF000000'}};
+                function kxRespCell(cell,value,border){cell.value=value;cell.font=kxXFont(true,11);cell.alignment={horizontal:'left',vertical:'middle',wrapText:true};cell.border=border;}
+                s.mergeCells(r,1,r,10);
+                kxRespCell(s.getCell(r,1),'RESPONSABLES.',{top:KX_BLACK,left:KX_BLACK,right:KX_BLACK});
+                s.getCell(r,1).font={...kxXFont(true,11),underline:true};r++;
+                s.mergeCells(r,1,r,5);s.mergeCells(r,6,r,10);
+                kxRespCell(s.getCell(r,1),`SUPERVISOR DE OBRA : ${ws().project.sup||'—'}`,{left:KX_BLACK});
+                kxRespCell(s.getCell(r,6),`ADMINISTRADOR DE OBRA : ${ws().project.adm||'—'}`,{right:KX_BLACK});
+                s.getRow(r).height=18;r++;
+                s.mergeCells(r,1,r,5);s.mergeCells(r,6,r,10);
+                kxRespCell(s.getCell(r,1),`RESIDENTE DE OBRA : ${ws().project.res||'—'}`,{left:KX_BLACK,bottom:KX_BLACK});
+                kxRespCell(s.getCell(r,6),`ALMACENERO (A) : ${ws().project.alm||'—'}`,{right:KX_BLACK,bottom:KX_BLACK});
+                s.getRow(r).height=18;r++;
                 materiales.forEach((ing,materialIndex)=>{
                     // La celda de MATERIAL ocupa las DOS filas (etiqueta + valores de UNIDAD/CÓDIGO/O/C/SIAF),
                     // para que no quede un recuadro vacío debajo, como en el formato oficial.
