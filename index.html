@@ -7575,14 +7575,17 @@ ${bodyHtml}
                 kxMergeStyle(s,r,1,5,`SUPERVISOR DE OBRA : ${ws().project.sup||'—'}`,true,null,'left');kxMergeStyle(s,r,6,10,`ADMINISTRADOR DE OBRA : ${ws().project.adm||'—'}`,true,null,'left');s.getRow(r).height=18;r++;
                 kxMergeStyle(s,r,1,5,`RESIDENTE DE OBRA : ${ws().project.res||'—'}`,true,null,'left');kxMergeStyle(s,r,6,10,`ALMACENERO (A) : ${ws().project.alm||'—'}`,true,null,'left');s.getRow(r).height=18;r++;
                 materiales.forEach((ing,materialIndex)=>{
-                    s.mergeCells(r,1,r,6);
+                    // La celda de MATERIAL ocupa las DOS filas (etiqueta + valores de UNIDAD/CÓDIGO/O/C/SIAF),
+                    // para que no quede un recuadro vacío debajo, como en el formato oficial.
+                    s.mergeCells(r,1,r+1,6);
                     const matCell=s.getCell(r,1);
                     matCell.value={richText:[{font:kxXFont(true,11),text:'MATERIAL: '},{font:kxXFont(false,11),text:String(ing.nombre||'—')}]};
                     matCell.alignment={horizontal:'left',vertical:'middle',wrapText:true};matCell.border=KX_X_BORDER;
                     ['UNIDAD DE MEDIDA','CÓDIGO','O/C','SIAF'].forEach((t,i)=>{const c=s.getCell(r,7+i);c.value=t;kxXStyle(c,true,null,'center');c.alignment={horizontal:'center',vertical:'middle',wrapText:true};});
                     const matWidth=KX_X_COLW.slice(0,6).reduce((a,b)=>a+b,0);
-                    s.getRow(r).height=Math.max(24,kxEstimateLines(ing.nombre,matWidth)*15+9);r++;
-                    kxMergeStyle(s,r,1,6,'',false,null,'left');[ing.unidad||'—',ing.codigo||'—',ing.oc||'—',ing.siaf||'—'].forEach((v,i)=>{const c=s.getCell(r,7+i);c.value=v;kxXStyle(c,false,null,'center');});s.getRow(r).height=18;r++;
+                    const matLines=kxEstimateLines(ing.nombre,matWidth);
+                    s.getRow(r).height=24;r++;
+                    [ing.unidad||'—',ing.codigo||'—',ing.oc||'—',ing.siaf||'—'].forEach((v,i)=>{const c=s.getCell(r,7+i);c.value=v;kxXStyle(c,false,null,'center');});s.getRow(r).height=Math.max(18,matLines*15);r++;
                     s.mergeCells(r,1,r,10);
                     const provCell=s.getCell(r,1);
                     provCell.value={richText:[{font:kxXFont(true,11),text:'RAZON SOCIAL O NOMBRE: '},{font:kxXFont(false,11),text:String(ing.razon||'')}]};
