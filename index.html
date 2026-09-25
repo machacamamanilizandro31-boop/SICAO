@@ -7561,31 +7561,39 @@ ${bodyHtml}
                 const s=workbook.addWorksheet('Kardex general');
                 KX_X_COLW.forEach((v,i)=>s.getColumn(i+1).width=v);
                 let r=1;
-                const logoH=insertLogoTopLeft(workbook,s,10); s.getRow(1).height=Math.max(55,logoH+5);
-                s.mergeCells(1,3,1,10);s.getCell(1,3).value=(ws().projectName||'').toUpperCase();s.getCell(1,3).font=kxXFont(true,11);s.getCell(1,3).alignment={vertical:'middle',horizontal:'left'};
+                const logoH=insertLogoTopLeft(workbook,s,10);
+                const projTitleWidth=KX_X_COLW.slice(2).reduce((a,b)=>a+b,0);
+                const projTitleText=(ws().projectName||'').toUpperCase();
+                s.mergeCells(1,3,1,10);const projTitleCell=s.getCell(1,3);projTitleCell.value=projTitleText;projTitleCell.font=kxXFont(true,11);projTitleCell.alignment={vertical:'middle',horizontal:'left',wrapText:true};
+                s.getRow(1).height=Math.max(55,logoH+5,kxEstimateLines(projTitleText,projTitleWidth)*17+10);
                 r=2;kxMergeStyle(s,r,1,10,'CONTROL DE MATERIALES',true,null,'center');s.getCell(r,1).font=kxXFont(true,16);s.getRow(r).height=25;r++;
                 // FECHA separada del rango por una línea, igual al formato original.
                 s.mergeCells(r,1,r+1,3); const codeCell=s.getCell(r,1); codeCell.value=`CODIGO DEL PROYECTO: ${ws().project.codigo||'—'}`; kxXStyle(codeCell,true,null,'left'); codeCell.alignment={horizontal:'left',vertical:'middle',wrapText:false,shrinkToFit:true};
-                s.mergeCells(r,4,r+1,8); const projectCell=s.getCell(r,4); projectCell.value=`NOMBRE DEL PROYECTO: ${ws().project.nombre||'—'}`; kxXStyle(projectCell,true,null,'left');
+                s.mergeCells(r,4,r+1,8); const projectCell=s.getCell(r,4); const projectText=`NOMBRE DEL PROYECTO: ${ws().project.nombre||'—'}`; projectCell.value=projectText; kxXStyle(projectCell,true,null,'left');
                 kxMergeStyle(s,r,9,10,'FECHA',true,null,'center');
                 kxMergeStyle(s,r+1,9,10,`${fmtFecha(desde)||'Inicio'}  AL  ${fmtFecha(hasta)||'Hoy'}`,false,null,'center');
-                // Altura suficiente para que el código del proyecto nunca quede oculto por el ajuste de texto.
-                s.getRow(r).height=24; s.getRow(r+1).height=24; r+=2;
+                // Altura suficiente para que el nombre del proyecto (por largo que sea) nunca quede oculto.
+                const projectWidth=KX_X_COLW.slice(3,8).reduce((a,b)=>a+b,0);
+                const projectTotalH=Math.max(48,kxEstimateLines(projectText,projectWidth)*17+18);
+                s.getRow(r).height=projectTotalH/2; s.getRow(r+1).height=projectTotalH/2; r+=2;
                 // Bloque RESPONSABLES sin líneas internas: solo el contorno exterior del recuadro
                 // (arriba en la 1ra fila, abajo en la 3ra, izquierda/derecha en las tres), igual al formato oficial.
                 const KX_BLACK={style:'thin',color:{argb:'FF000000'}};
                 function kxRespCell(cell,value,border){cell.value=value;cell.font=kxXFont(true,11);cell.alignment={horizontal:'left',vertical:'middle',wrapText:true};cell.border=border;}
+                const respLeftW=KX_X_COLW.slice(0,5).reduce((a,b)=>a+b,0),respRightW=KX_X_COLW.slice(5,10).reduce((a,b)=>a+b,0);
                 s.mergeCells(r,1,r,10);
                 kxRespCell(s.getCell(r,1),'RESPONSABLES.',{top:KX_BLACK,left:KX_BLACK,right:KX_BLACK});
                 s.getCell(r,1).font={...kxXFont(true,11),underline:true};r++;
                 s.mergeCells(r,1,r,5);s.mergeCells(r,6,r,10);
-                kxRespCell(s.getCell(r,1),`SUPERVISOR DE OBRA : ${ws().project.sup||'—'}`,{left:KX_BLACK});
-                kxRespCell(s.getCell(r,6),`ADMINISTRADOR DE OBRA : ${ws().project.adm||'—'}`,{right:KX_BLACK});
-                s.getRow(r).height=18;r++;
+                const supTxt=`SUPERVISOR DE OBRA : ${ws().project.sup||'—'}`,admTxt=`ADMINISTRADOR DE OBRA : ${ws().project.adm||'—'}`;
+                kxRespCell(s.getCell(r,1),supTxt,{left:KX_BLACK});
+                kxRespCell(s.getCell(r,6),admTxt,{right:KX_BLACK});
+                s.getRow(r).height=Math.max(18,Math.max(kxEstimateLines(supTxt,respLeftW),kxEstimateLines(admTxt,respRightW))*17);r++;
                 s.mergeCells(r,1,r,5);s.mergeCells(r,6,r,10);
-                kxRespCell(s.getCell(r,1),`RESIDENTE DE OBRA : ${ws().project.res||'—'}`,{left:KX_BLACK,bottom:KX_BLACK});
-                kxRespCell(s.getCell(r,6),`ALMACENERO (A) : ${ws().project.alm||'—'}`,{right:KX_BLACK,bottom:KX_BLACK});
-                s.getRow(r).height=18;r++;
+                const resTxt=`RESIDENTE DE OBRA : ${ws().project.res||'—'}`,almTxt=`ALMACENERO (A) : ${ws().project.alm||'—'}`;
+                kxRespCell(s.getCell(r,1),resTxt,{left:KX_BLACK,bottom:KX_BLACK});
+                kxRespCell(s.getCell(r,6),almTxt,{right:KX_BLACK,bottom:KX_BLACK});
+                s.getRow(r).height=Math.max(18,Math.max(kxEstimateLines(resTxt,respLeftW),kxEstimateLines(almTxt,respRightW))*17);r++;
                 materiales.forEach((ing,materialIndex)=>{
                     // La celda de MATERIAL ocupa las DOS filas (etiqueta + valores de UNIDAD/CÓDIGO/O/C/SIAF),
                     // para que no quede un recuadro vacío debajo, como en el formato oficial.
@@ -7597,13 +7605,13 @@ ${bodyHtml}
                     const matWidth=KX_X_COLW.slice(0,6).reduce((a,b)=>a+b,0);
                     const matLines=kxEstimateLines(ing.nombre,matWidth);
                     s.getRow(r).height=24;r++;
-                    [ing.unidad||'—',ing.codigo||'—',ing.oc||'—',ing.siaf||'—'].forEach((v,i)=>{const c=s.getCell(r,7+i);c.value=v;kxXStyle(c,false,null,'center');});s.getRow(r).height=Math.max(18,matLines*15);r++;
+                    [ing.unidad||'—',ing.codigo||'—',ing.oc||'—',ing.siaf||'—'].forEach((v,i)=>{const c=s.getCell(r,7+i);c.value=v;kxXStyle(c,false,null,'center');});s.getRow(r).height=Math.max(18,matLines*17);r++;
                     s.mergeCells(r,1,r,10);
                     const provCell=s.getCell(r,1);
                     provCell.value={richText:[{font:kxXFont(true,11),text:'RAZON SOCIAL O NOMBRE: '},{font:kxXFont(false,11),text:String(ing.razon||'')}]};
                     provCell.alignment={horizontal:'left',vertical:'middle',wrapText:true};provCell.border=KX_X_BORDER;
                     const fullWidth=KX_X_COLW.reduce((a,b)=>a+b,0);
-                    s.getRow(r).height=Math.max(18,kxEstimateLines('RAZON SOCIAL O NOMBRE: '+(ing.razon||''),fullWidth)*15+3);r++;
+                    s.getRow(r).height=Math.max(18,kxEstimateLines('RAZON SOCIAL O NOMBRE: '+(ing.razon||''),fullWidth)*17+3);r++;
                     const hr=r; s.mergeCells(r,1,r+1,1);s.mergeCells(r,2,r+1,2);s.mergeCells(r,3,r,5);s.mergeCells(r,6,r+1,6);s.mergeCells(r,7,r+1,7);s.mergeCells(r,8,r+1,8);s.mergeCells(r,9,r+1,9);s.mergeCells(r,10,r+1,10);
                     [[1,'N°'],[2,'FECHA'],[3,'MOVIMIENTO'],[6,'DESCRIPCION'],[7,'NOMBRES Y APELLIDOS'],[8,'CARGO'],[9,'FIRMA'],[10,'OBSERVACIÓN']].forEach(([c,v])=>{const ce=s.getCell(r,c);ce.value=v;kxXStyle(ce,true,'FFD9E2F3','center');});
                     ['ENTRADA','SALIDA','SALDO'].forEach((v,i)=>{const ce=s.getCell(r+1,3+i);ce.value=v;kxXStyle(ce,true,'FFD9E2F3','center');});
@@ -7611,7 +7619,7 @@ ${bodyHtml}
                     const rows=getKardexRows(ing,desde,hasta); const numFmt=force2?'#,##0.00':'#,##0.##';
                     rows.forEach((m,idx)=>{const vals=[idx+1,fmtFecha(m.fecha),m.entrada>0?m.entrada:'----',m.salida>0?m.salida:'----',m.saldo,m.descripcion||'',m.nombreApellido||'',m.cargo||'','',m.observacion||''];vals.forEach((v,i)=>{const c=s.getCell(r,i+1);c.value=v;kxXStyle(c,false,null,'center');if(i>=2&&i<=4&&typeof v==='number')c.numFmt=numFmt;});
                         const neededLines=Math.max(kxEstimateLines(m.descripcion,KX_X_COLW[5]),kxEstimateLines(m.nombreApellido,KX_X_COLW[6]),kxEstimateLines(m.cargo,KX_X_COLW[7]),kxEstimateLines(m.observacion,KX_X_COLW[9]));
-                        s.getRow(r).height=Math.max(18,neededLines*15);
+                        s.getRow(r).height=Math.max(18,neededLines*17);
                         r++;});
                     if(!rows.length){kxMergeStyle(s,r,1,10,'Sin movimientos en el rango seleccionado.',false,null,'center');r++;}
                     if(materialIndex < materiales.length-1){for(let cc=1;cc<=10;cc++){const c=s.getCell(r,cc);c.border={bottom:{style:'medium',color:{argb:'FFFFFF00'}}};}s.getCell(r,1).border={...s.getCell(r,1).border,left:KX_X_BORDER.left};s.getCell(r,10).border={...s.getCell(r,10).border,right:KX_X_BORDER.right};s.getRow(r).height=3;r++;}
