@@ -7623,7 +7623,7 @@ ${bodyHtml}
                         s.getRow(r).height=Math.max(18,neededLines*17);
                         r++;});
                     if(!rows.length){kxMergeStyle(s,r,1,10,'Sin movimientos en el rango seleccionado.',false,null,'center');r++;}
-                    if(materialIndex < materiales.length-1){for(let cc=1;cc<=10;cc++){const c=s.getCell(r,cc);c.border={bottom:{style:'medium',color:{argb:'FFFFFF00'}}};}s.getCell(r,1).border={...s.getCell(r,1).border,left:KX_X_BORDER.left};s.getCell(r,10).border={...s.getCell(r,10).border,right:KX_X_BORDER.right};s.getRow(r).height=3;r++;}
+                    if(materialIndex < materiales.length-1){for(let cc=1;cc<=10;cc++){const c=s.getCell(r,cc);c.border={};c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFFFFF00'}};}s.getCell(r,1).border={left:KX_X_BORDER.left};s.getCell(r,10).border={right:KX_X_BORDER.right};s.getRow(r).height=4;r++;}
                 });
                 // Espacio en blanco antes de las firmas, igual al formato original.
                 s.getRow(r).height=14; r++;
