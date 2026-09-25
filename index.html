@@ -80,80 +80,113 @@
                font-family: inherit;
            }
 
-           /* ===== LOGIN — pase de acceso de almacén ===== */
+           /* ===== LOGIN — estética oscura y dorada tipo "acceso premium" ===== */
            .kob-login-wrap {
-               --lg-bg: #12161C;
-               --lg-grid: rgba(255,255,255,0.045);
-               --lg-panel: #1C222B;
+               --lg-bg: #0A0C11;
+               --lg-panel: #14171F;
+               --lg-panel-2: #0E1015;
                --lg-panel-edge: #262E3A;
-               --lg-border: #323C49;
+               --lg-border: rgba(245,166,35,0.28);
                --lg-amber: #F5A623;
-               --lg-amber-dark: #D3860F;
-               --lg-text: #F3F5F8;
-               --lg-text-dim: #8D96A6;
-               --lg-input-bg: #EEF0F3;
-               --lg-input-text: #1B222C;
+               --lg-amber-2: #FFD877;
+               --lg-amber-dark: #B9790C;
+               --lg-text: #F5F6F8;
+               --lg-text-dim: #98A1B0;
+               --lg-input-bg: #1A1D26;
+               --lg-input-border: #2B3140;
+               --lg-input-text: #F0F1F3;
                --lg-red: #FF9B9B;
                --lg-red-bg: rgba(221,59,59,0.16);
                --lg-red-border: rgba(221,59,59,0.45);
                min-height: 100vh;
                display: flex;
+               flex-direction: column;
                align-items: center;
                justify-content: center;
+               gap: 26px;
                padding: 48px 16px;
-               background: radial-gradient(ellipse 640px 320px at 50% 0%, rgba(245,166,35,0.09), transparent 60%), repeating-linear-gradient(0deg, var(--lg-grid) 0 1px, transparent 1px 42px), repeating-linear-gradient(90deg, var(--lg-grid) 0 1px, transparent 1px 42px), var(--lg-bg);
                position: relative;
+               overflow: hidden;
+               background:
+                   radial-gradient(900px 480px at 18% -8%, rgba(245,166,35,0.14), transparent 60%),
+                   radial-gradient(700px 420px at 100% 108%, rgba(245,166,35,0.09), transparent 55%),
+                   repeating-linear-gradient(115deg, rgba(245,166,35,0.05) 0 2px, transparent 2px 150px),
+                   repeating-linear-gradient(25deg, rgba(245,166,35,0.035) 0 1px, transparent 1px 130px),
+                   var(--lg-bg);
            }
+
+           .kob-login-brand {
+               display: flex;
+               flex-direction: column;
+               align-items: center;
+               gap: 6px;
+               text-align: center;
+               position: relative;
+               z-index: 1;
+           }
+
+               .kob-login-brand-icon {
+                   width: 54px;
+                   height: 54px;
+                   display: flex;
+                   align-items: center;
+                   justify-content: center;
+                   border-radius: 14px;
+                   background: linear-gradient(160deg, #1B1F29, #0D0F14);
+                   border: 1px solid var(--lg-border);
+                   box-shadow: 0 0 24px rgba(245,166,35,0.18), inset 0 1px 0 rgba(255,255,255,0.04);
+                   margin-bottom: 4px;
+               }
+
+                   .kob-login-brand-icon svg {
+                       width: 28px;
+                       height: 28px;
+                       stroke: var(--lg-amber);
+                   }
+
+               .kob-login-brand-name {
+                   font-family: 'Oswald',sans-serif;
+                   font-weight: 700;
+                   font-size: 24px;
+                   letter-spacing: 2px;
+                   text-transform: uppercase;
+                   background: linear-gradient(180deg, var(--lg-amber-2), var(--lg-amber) 70%);
+                   -webkit-background-clip: text;
+                   background-clip: text;
+                   color: transparent;
+               }
+
+               .kob-login-brand-tag {
+                   font-family: 'IBM Plex Mono',monospace;
+                   font-size: 10.5px;
+                   letter-spacing: 3px;
+                   color: var(--lg-text-dim);
+                   text-transform: uppercase;
+               }
 
            .kob-login-badge {
                width: 100%;
                max-width: 380px;
-               background: var(--lg-panel);
+               background: linear-gradient(180deg, var(--lg-panel), var(--lg-panel-2));
                border: 1px solid var(--lg-border);
-               border-radius: 8px;
-               box-shadow: 0 28px 60px -12px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.03);
+               border-radius: 22px;
+               clip-path: polygon(26px 0, 100% 0, 100% calc(100% - 26px), calc(100% - 26px) 100%, 0 100%, 0 26px);
+               box-shadow: 0 30px 80px -20px rgba(0,0,0,0.7), 0 0 0 1px rgba(245,166,35,0.05), 0 0 46px rgba(245,166,35,0.07);
                position: relative;
                overflow: hidden;
+               z-index: 1;
            }
 
-           .kob-rivet {
-               position: absolute;
-               width: 7px;
-               height: 7px;
-               border-radius: 50%;
-               background: radial-gradient(circle at 35% 30%, #4A5566, #0E1217 75%);
-               box-shadow: 0 1px 0 rgba(255,255,255,0.08);
-               z-index: 2;
-           }
-
-               .kob-rivet.tl {
-                   top: 14px;
-                   left: 14px;
-               }
-
-               .kob-rivet.tr {
-                   top: 14px;
-                   right: 14px;
-               }
-
-               .kob-rivet.bl {
-                   bottom: 14px;
-                   left: 14px;
-               }
-
-               .kob-rivet.br {
-                   bottom: 14px;
-                   right: 14px;
-               }
+           .kob-rivet { display: none; }
 
            .kob-login-tape {
-               height: 9px;
+               height: 3px;
                width: 100%;
-               background: repeating-linear-gradient(-45deg, var(--lg-amber) 0 10px, #1A1F27 10px 20px);
+               background: linear-gradient(90deg, transparent, var(--lg-amber) 20%, var(--lg-amber-2) 50%, var(--lg-amber) 80%, transparent);
            }
 
            .kob-login-head {
-               padding: 30px 30px 20px;
+               padding: 28px 30px 18px;
                text-align: center;
            }
 
@@ -168,14 +201,14 @@
                align-items: center;
                justify-content: center;
                cursor: pointer;
-               border: 1.5px dashed rgba(255,255,255,0.28);
+               border: 1.5px dashed rgba(245,166,35,0.35);
                border-radius: 12px;
                transition: background .15s ease, border-color .15s ease;
            }
 
                .kob-login-plate:hover {
-                   background: rgba(255,255,255,0.06);
-                   border-color: rgba(255,255,255,0.45);
+                   background: rgba(245,166,35,0.06);
+                   border-color: rgba(245,166,35,0.55);
                }
 
                .kob-login-plate.has-logo {
@@ -228,27 +261,9 @@
            .kob-login-perf {
                position: relative;
                height: 0;
-               border-top: 1.5px dashed var(--lg-border);
-               margin: 2px 0 24px;
+               border-top: 1px solid rgba(245,166,35,0.16);
+               margin: 2px 0 22px;
            }
-
-               .kob-login-perf::before, .kob-login-perf::after {
-                   content: '';
-                   position: absolute;
-                   top: -7px;
-                   width: 14px;
-                   height: 14px;
-                   border-radius: 50%;
-                   background: var(--lg-bg);
-               }
-
-               .kob-login-perf::before {
-                   left: -7px;
-               }
-
-               .kob-login-perf::after {
-                   right: -7px;
-               }
 
            .kob-login-body {
                padding: 0 30px 26px;
@@ -270,46 +285,135 @@
                    font-family: 'IBM Plex Mono',monospace;
                }
 
+               .kob-field-icon {
+                   position: relative;
+                   display: flex;
+                   align-items: center;
+               }
+
+                   .kob-field-icon svg.kob-field-ico-left {
+                       position: absolute;
+                       left: 12px;
+                       width: 16px;
+                       height: 16px;
+                       stroke: var(--lg-text-dim);
+                       pointer-events: none;
+                   }
+
+                   .kob-field-icon input {
+                       padding-left: 36px !important;
+                   }
+
+                   .kob-field-icon input#kob-pass {
+                       padding-right: 38px !important;
+                   }
+
+                   .kob-field-toggle {
+                       position: absolute;
+                       right: 10px;
+                       width: 26px;
+                       height: 26px;
+                       display: flex;
+                       align-items: center;
+                       justify-content: center;
+                       background: none;
+                       border: none;
+                       cursor: pointer;
+                       color: var(--lg-text-dim);
+                       padding: 0;
+                   }
+
+                       .kob-field-toggle svg {
+                           width: 16px;
+                           height: 16px;
+                       }
+
+                       .kob-field-toggle:hover {
+                           color: var(--lg-amber);
+                       }
+
                .kob-field input {
+                   width: 100%;
                    padding: 11px 12px;
-                   border: 1px solid transparent;
-                   border-radius: 4px;
+                   border: 1px solid var(--lg-input-border);
+                   border-radius: 8px;
                    font-size: 13.5px;
                    background: var(--lg-input-bg);
                    color: var(--lg-input-text);
+                   box-sizing: border-box;
                }
 
                    .kob-field input::placeholder {
-                       color: #9098A4;
+                       color: #6B7385;
                    }
 
                    .kob-field input:focus {
                        outline: none;
                        border-color: var(--lg-amber);
-                       box-shadow: 0 0 0 3px rgba(245,166,35,0.22);
+                       box-shadow: 0 0 0 3px rgba(245,166,35,0.18);
+                   }
+
+           .kob-login-row {
+               display: flex;
+               align-items: center;
+               justify-content: space-between;
+               margin: 2px 0 18px;
+               font-size: 11.5px;
+           }
+
+               .kob-login-remember {
+                   display: flex;
+                   align-items: center;
+                   gap: 6px;
+                   color: var(--lg-text-dim);
+                   cursor: pointer;
+                   user-select: none;
+               }
+
+                   .kob-login-remember input {
+                       width: 13px;
+                       height: 13px;
+                       accent-color: var(--lg-amber);
+                       cursor: pointer;
+                   }
+
+               .kob-login-row a {
+                   color: var(--lg-text-dim);
+                   text-decoration: none;
+               }
+
+                   .kob-login-row a:hover {
+                       color: var(--lg-amber);
+                       text-decoration: underline;
                    }
 
            .kob-login-btn {
                width: 100%;
-               background: var(--lg-amber);
+               background: linear-gradient(90deg, var(--lg-amber-2), var(--lg-amber) 55%, var(--lg-amber-dark));
                color: #1A1200;
                border: none;
-               padding: 12px;
-               border-radius: 4px;
+               padding: 13px;
+               border-radius: 9px;
                font-weight: 700;
                font-size: 12.5px;
                margin-top: 6px;
                text-transform: uppercase;
-               letter-spacing: 1px;
+               letter-spacing: 1.5px;
                display: flex;
                align-items: center;
                justify-content: center;
                gap: 8px;
-               transition: background 0.15s ease;
+               cursor: pointer;
+               box-shadow: 0 12px 26px -10px rgba(245,166,35,0.55);
+               transition: filter 0.15s ease, transform 0.1s ease;
            }
 
                .kob-login-btn:hover {
-                   background: var(--lg-amber-dark);
+                   filter: brightness(1.08);
+               }
+
+               .kob-login-btn:active {
+                   transform: translateY(1px);
                }
 
                .kob-login-btn svg {
@@ -317,10 +421,44 @@
                    height: 14px;
                }
 
+           .kob-login-features {
+               display: flex;
+               justify-content: center;
+               gap: 26px;
+               padding: 16px 22px 22px;
+               border-top: 1px solid var(--lg-panel-edge);
+               background: rgba(0,0,0,0.18);
+           }
+
+               .kob-login-feature {
+                   display: flex;
+                   flex-direction: column;
+                   align-items: center;
+                   gap: 5px;
+                   flex: 1;
+                   min-width: 0;
+               }
+
+                   .kob-login-feature svg {
+                       width: 18px;
+                       height: 18px;
+                       stroke: var(--lg-amber);
+                   }
+
+                   .kob-login-feature span {
+                       font-family: 'IBM Plex Mono',monospace;
+                       font-size: 8.5px;
+                       letter-spacing: 0.4px;
+                       color: var(--lg-text-dim);
+                       text-transform: uppercase;
+                       text-align: center;
+                       line-height: 1.3;
+                   }
+
            .kob-login-foot {
                padding: 14px 30px;
                border-top: 1px solid var(--lg-panel-edge);
-               background: #171C24;
+               background: #0F1117;
                font-family: 'IBM Plex Mono',monospace;
                font-size: 10.5px;
                color: var(--lg-text-dim);
@@ -339,7 +477,7 @@
                border: 1px solid var(--lg-red-border);
                font-size: 12px;
                padding: 9px 11px;
-               border-radius: 4px;
+               border-radius: 8px;
                margin-bottom: 14px;
                line-height: 1.4;
                display: none;
@@ -1834,6 +1972,13 @@
 
         <!-- LOGIN -->
         <div class="kob-login-wrap" id="kob-screen-login">
+            <div class="kob-login-brand">
+                <div class="kob-login-brand-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-6 9 6v11a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"></path></svg>
+                </div>
+                <div class="kob-login-brand-name">SICAO</div>
+                <div class="kob-login-brand-tag">CONTROL · REGISTRO · TRAZABILIDAD</div>
+            </div>
             <div class="kob-login-badge">
                 <span class="kob-rivet tl"></span><span class="kob-rivet tr"></span>
                 <span class="kob-rivet bl"></span><span class="kob-rivet br"></span>
@@ -1855,20 +2000,47 @@
                     </div>
                     <div class="kob-field">
                         <label>Usuario</label>
-                        <input type="text" id="kob-user" placeholder="Ingrese su usuario" autocomplete="username">
+                        <div class="kob-field-icon">
+                            <svg class="kob-field-ico-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                            <input type="text" id="kob-user" placeholder="Ingrese su usuario" autocomplete="username">
+                        </div>
                     </div>
                     <div class="kob-field">
                         <label>Contraseña</label>
-                        <input type="password" id="kob-pass" placeholder="Ingrese su contraseña" autocomplete="current-password">
+                        <div class="kob-field-icon">
+                            <svg class="kob-field-ico-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                            <input type="password" id="kob-pass" placeholder="Ingrese su contraseña" autocomplete="current-password">
+                            <button type="button" class="kob-field-toggle" id="kob-pass-toggle" aria-label="Mostrar contraseña">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="kob-login-row">
+                        <label class="kob-login-remember">
+                            <input type="checkbox" id="kob-remember">
+                            Recordarme
+                        </label>
+                        <a href="#" id="kob-recover-link">¿Olvidaste tu contraseña?</a>
                     </div>
                     <button type="button" id="kob-login-btn" class="kob-login-btn">
                         Ingresar
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
                     </button>
                     <p id="kob-login-cargando" style="text-align:center; margin:10px 0 0; font-size:12px; color:var(--lg-text-dim); display:none;">☁️ Conectando con la nube…</p>
-                    <p style="text-align:center; margin:14px 0 0;">
-                        <a href="#" id="kob-recover-link" style="color:var(--lg-text-dim); font-size:12px; text-decoration:underline;">¿Olvidaste tu contraseña de administrador?</a>
-                    </p>
+                </div>
+                <div class="kob-login-features">
+                    <div class="kob-login-feature">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                        <span>Control de<br>Materiales</span>
+                    </div>
+                    <div class="kob-login-feature">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                        <span>Acceso<br>Seguro</span>
+                    </div>
+                    <div class="kob-login-feature">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>
+                        <span>Respaldo en<br>la Nube</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -4590,6 +4762,28 @@ ${bodyHtml}
             $('#kob-login-btn').addEventListener('click', attemptLogin);
             $('#kob-pass').addEventListener('keydown', e => { if (e.key === 'Enter') attemptLogin(); });
             $('#kob-user').addEventListener('keydown', e => { if (e.key === 'Enter') attemptLogin(); });
+
+            // Mostrar/ocultar contraseña
+            const kobPassToggle = $('#kob-pass-toggle');
+            if (kobPassToggle) {
+                kobPassToggle.addEventListener('click', () => {
+                    const inp = $('#kob-pass');
+                    inp.type = inp.type === 'password' ? 'text' : 'password';
+                });
+            }
+
+            // "Recordarme": guarda solo el nombre de usuario (nunca la contraseña) en este navegador.
+            const KOB_REMEMBER_KEY = 'kardex-obra-remember-user';
+            try {
+                const rememberedUser = localStorage.getItem(KOB_REMEMBER_KEY);
+                if (rememberedUser) { $('#kob-user').value = rememberedUser; $('#kob-remember').checked = true; }
+            } catch (e) { }
+            $('#kob-login-btn').addEventListener('click', () => {
+                try {
+                    if ($('#kob-remember').checked) localStorage.setItem(KOB_REMEMBER_KEY, $('#kob-user').value.trim());
+                    else localStorage.removeItem(KOB_REMEMBER_KEY);
+                } catch (e) { }
+            });
 
             function setLicenseScreenError(msg) {
                 const err = $('#kob-lic-screen-err');
