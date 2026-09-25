@@ -7541,7 +7541,7 @@ ${bodyHtml}
             function kxEstimateLines(text,colWidth){
                 text=String(text==null?'':text);
                 if(!text) return 1;
-                const charsPerUnit=1.7; // aproximación de caracteres por unidad de ancho en Arial 11
+                const charsPerUnit=0.8; // calibrado con casos reales: Arial 11 cabe ~0.8 caracteres por unidad de ancho de columna
                 const capacity=Math.max(1,Math.floor(colWidth*charsPerUnit));
                 return Math.max(1,Math.ceil(text.length/capacity));
             }
