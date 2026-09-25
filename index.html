@@ -6038,34 +6038,24 @@ ${bodyHtml}
                     });
                     return true;
                 }
-                // Fuera de SICAO.Desktop (navegador normal): copiamos el Excel al portapapeles
-                // para que el botón "Pegar reporte de SICAO" en Excel lo abra directo, sin descargar.
+                // APK / PWA / navegador: el Excel debe descargarse como archivo .xlsx.
+                // El complemento sigue usando su funcionamiento actual; aquí no se copia al portapapeles.
                 try {
                     const buffer = await workbook.xlsx.writeBuffer();
-                    const bytes = new Uint8Array(buffer);
-                    let binario = '';
-                    const tamanoBloque = 0x8000;
-                    for (let i = 0; i < bytes.length; i += tamanoBloque) {
-                        binario += String.fromCharCode(...bytes.subarray(i, i + tamanoBloque));
-                    }
-                    const base64 = btoa(binario);
-                    const copiado = await sicaoCopiarAlPortapapeles(base64);
-                    if (copiado) {
-                        if (typeof toast === 'function') {
-                            toast('Reporte copiado. Ve a Excel: se abrirá solo en unos segundos.');
-                        } else {
-                            alert('Reporte copiado. Ve a Excel: se abrirá solo en unos segundos.');
-                        }
-                    } else {
-                        throw new Error('No se pudo copiar al portapapeles por ningún método.');
-                    }
+                    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    a.rel = 'noopener';
+                    a.style.display = 'none';
+                    document.body.appendChild(a);
+                    a.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+                    document.body.removeChild(a);
+                    setTimeout(() => URL.revokeObjectURL(url), 15000);
                 } catch (e) {
-                    console.error('No se pudo copiar el reporte al portapapeles:', e);
-                    // Se usa alert() a propósito: es una ventana que hay que cerrar a mano,
-                    // así no se tapa con el aviso verde que tu sistema muestra justo después.
-                    alert('No se pudo copiar el reporte a Excel automáticamente.\n\nSe descargó el archivo como respaldo: revisa tu carpeta de Descargas.');
-                    // Si el portapapeles falla por completo, se descarga como respaldo.
-                    await downloadWorkbook(workbook, filename);
+                    console.error('No se pudo descargar el Excel:', e);
+                    throw e;
                 }
                 return true;
             }
