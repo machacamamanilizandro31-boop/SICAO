@@ -6038,26 +6038,49 @@ ${bodyHtml}
                     });
                     return true;
                 }
-                // APK / PWA / navegador: el Excel debe descargarse como archivo .xlsx.
-                // El complemento sigue usando su funcionamiento actual; aquí no se copia al portapapeles.
+                // APK / Android: descargar el Excel como archivo .xlsx.
+                // Complemento / navegador de PC: conservar el flujo original (copiar el reporte para abrirlo desde Excel).
+                const esAndroid = /Android/i.test(navigator.userAgent || '');
+                if (esAndroid) {
+                    try {
+                        const buffer = await workbook.xlsx.writeBuffer();
+                        const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = filename;
+                        a.rel = 'noopener';
+                        a.style.display = 'none';
+                        document.body.appendChild(a);
+                        a.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
+                        document.body.removeChild(a);
+                        setTimeout(() => URL.revokeObjectURL(url), 15000);
+                        return true;
+                    } catch (e) {
+                        console.error('No se pudo descargar el Excel en Android:', e);
+                        throw e;
+                    }
+                }
                 try {
                     const buffer = await workbook.xlsx.writeBuffer();
-                    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = filename;
-                    a.rel = 'noopener';
-                    a.style.display = 'none';
-                    document.body.appendChild(a);
-                    a.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }));
-                    document.body.removeChild(a);
-                    setTimeout(() => URL.revokeObjectURL(url), 15000);
+                    const bytes = new Uint8Array(buffer);
+                    let binario = '';
+                    const tamanoBloque = 0x8000;
+                    for (let i = 0; i < bytes.length; i += tamanoBloque) {
+                        binario += String.fromCharCode(...bytes.subarray(i, i + tamanoBloque));
+                    }
+                    const base64 = btoa(binario);
+                    const copiado = await sicaoCopiarAlPortapapeles(base64);
+                    if (copiado) {
+                        if (typeof toast === 'function') toast('Reporte generado. Ve a Excel: se abrirá solo en unos segundos.');
+                        else alert('Reporte generado. Ve a Excel: se abrirá solo en unos segundos.');
+                        return true;
+                    }
+                    throw new Error('No se pudo copiar el reporte al portapapeles.');
                 } catch (e) {
-                    console.error('No se pudo descargar el Excel:', e);
+                    console.error('No se pudo generar el reporte para el complemento:', e);
                     throw e;
                 }
-                return true;
             }
 
             async function downloadWorkbook(workbook, filename) {
@@ -7538,7 +7561,8 @@ ${bodyHtml}
                 s.mergeCells(r,3,r+1,8); const projectCell=s.getCell(r,3); projectCell.value=`NOMBRE DEL PROYECTO: ${ws().project.nombre||'—'}`; kxXStyle(projectCell,true,null,'left');
                 kxMergeStyle(s,r,9,10,'FECHA',true,null,'center');
                 kxMergeStyle(s,r+1,9,10,`${fmtFecha(desde)||'Inicio'}  AL  ${fmtFecha(hasta)||'Hoy'}`,false,null,'center');
-                s.getRow(r).height=18; s.getRow(r+1).height=18; r+=2;
+                // Altura suficiente para que el código del proyecto nunca quede oculto por el ajuste de texto.
+                s.getRow(r).height=27; s.getRow(r+1).height=27; r+=2;
                 kxMergeStyle(s,r,1,10,'RESPONSABLES.',true,null,'left');s.getCell(r,1).font={...kxXFont(true,12),underline:true};r++;
                 kxMergeStyle(s,r,1,5,`SUPERVISOR DE OBRA : ${ws().project.sup||'—'}`,true,null,'left');kxMergeStyle(s,r,6,10,`ADMINISTRADOR DE OBRA : ${ws().project.adm||'—'}`,true,null,'left');s.getRow(r).height=18;r++;
                 kxMergeStyle(s,r,1,5,`RESIDENTE DE OBRA : ${ws().project.res||'—'}`,true,null,'left');kxMergeStyle(s,r,6,10,`ALMACENERO (A) : ${ws().project.alm||'—'}`,true,null,'left');s.getRow(r).height=18;r++;
@@ -7578,6 +7602,7 @@ ${bodyHtml}
                     sg.fillStyle='#000000'; sg.fillText(sigLabels[i],x+boxW/2,labelY,boxW-24);
                 }
                 const sigImg=workbook.addImage({base64:sigCanvas.toDataURL('image/png'),extension:'png'});
+                // La zona completa de firmas es una imagen única, alineada exactamente de borde a borde.
                 s.addImage(sigImg,{tl:{col:0,row:r-1},br:{col:10,row:r}});
                 s.pageSetup.orientation='landscape';s.pageSetup.paperSize=5;s.pageSetup.fitToPage=true;s.pageSetup.fitToWidth=1;s.pageSetup.fitToHeight=0;s.pageSetup.margins={left:0.15,right:0.15,top:0.15,bottom:0.25,header:0,footer:0};
                 s.headerFooter.oddFooter='&R Pág. &P';
