@@ -5958,6 +5958,7 @@ ${bodyHtml}
                 try {
                     const workbook = new ExcelJS.Workbook();
                     const ws = workbook.addWorksheet(tituloHoja);
+                    ws.views = [{ showGridLines: false }];
                     ws.columns = [
                         { header: 'Usuario', key: 'usuario', width: 24 },
                         { header: 'Contraseña', key: 'password', width: 18 },
@@ -6315,6 +6316,7 @@ ${bodyHtml}
 
                 const workbook = new ExcelJS.Workbook();
                 const sheet = workbook.addWorksheet('Movimiento diario');
+                sheet.views = [{ showGridLines: false }];
 
                 const titulo = `MOVIMIENTO DIARIO DE ALMACEN – ${monthLabel(mesKey).toUpperCase()}`;
                 let row = writeProjectHeader(workbook, sheet, titulo, totalCols);
@@ -6590,6 +6592,7 @@ ${bodyHtml}
 
                 const workbook = new ExcelJS.Workbook();
                 const sheet = workbook.addWorksheet('Almacén valorizado');
+                sheet.views = [{ showGridLines: false }];
 
                 const titulo = `MOVIMIENTO DE ALMACEN VALORIZADO – ${monthLabel(mesKey).toUpperCase()}`;
                 let row = writeProjectHeader(workbook, sheet, titulo, totalCols);
@@ -7547,6 +7550,7 @@ ${bodyHtml}
             }
             function writeKardexOfficialExcel(workbook,materiales,desde,hasta,force2){
                 const s=workbook.addWorksheet('Kardex general');
+                s.views=[{showGridLines:false}];
                 KX_X_COLW.forEach((v,i)=>s.getColumn(i+1).width=v);
                 let r=1;
                 const logoH=insertLogoTopLeft(workbook,s,10);
