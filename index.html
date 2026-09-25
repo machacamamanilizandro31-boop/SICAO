@@ -7545,16 +7545,16 @@ ${bodyHtml}
             $('#kx-export-pdf-unica').addEventListener('click',exportKardexOfficialPdf);
 
             /* ---- Excel oficial: mismo orden, tipografía Arial 12 y disposición del original ---- */
-            function kxXFont(bold,size){return {name:'Arial',size:size||12,bold:!!bold,color:{argb:'FF000000'}};}
+            function kxXFont(bold,size){return {name:'Arial',size:size||11,bold:!!bold,color:{argb:'FF000000'}};}
             const KX_X_BORDER={top:{style:'thin',color:{argb:'FF000000'}},left:{style:'thin',color:{argb:'FF000000'}},bottom:{style:'thin',color:{argb:'FF000000'}},right:{style:'thin',color:{argb:'FF000000'}}};
-            function kxXStyle(cell,bold,fill,align){cell.font=kxXFont(bold,12);cell.alignment={horizontal:align||'left',vertical:'middle',wrapText:true};cell.border=KX_X_BORDER;if(fill)cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:fill}};}
+            function kxXStyle(cell,bold,fill,align){cell.font=kxXFont(bold,11);cell.alignment={horizontal:align||'left',vertical:'middle',wrapText:true};cell.border=KX_X_BORDER;if(fill)cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:fill}};}
             function kxMergeStyle(sheet,r,c1,c2,value,bold,fill,align){sheet.mergeCells(r,c1,r,c2);const c=sheet.getCell(r,c1);c.value=value;kxXStyle(c,bold,fill,align);return c;}
             function writeKardexOfficialExcel(workbook,materiales,desde,hasta,force2){
                 const s=workbook.addWorksheet('Kardex general');
                 [6,13,11,11,11,29,21,14,15,18].forEach((v,i)=>s.getColumn(i+1).width=v);
                 let r=1;
                 const logoH=insertLogoTopLeft(workbook,s,10); s.getRow(1).height=Math.max(55,logoH+5);
-                s.mergeCells(1,3,1,10);s.getCell(1,3).value=(ws().projectName||'').toUpperCase();s.getCell(1,3).font=kxXFont(true,12);s.getCell(1,3).alignment={vertical:'middle',horizontal:'left'};
+                s.mergeCells(1,3,1,10);s.getCell(1,3).value=(ws().projectName||'').toUpperCase();s.getCell(1,3).font=kxXFont(true,11);s.getCell(1,3).alignment={vertical:'middle',horizontal:'left'};
                 r=2;kxMergeStyle(s,r,1,10,'CONTROL DE MATERIALES',true,null,'center');s.getCell(r,1).font=kxXFont(true,16);s.getRow(r).height=25;r++;
                 // FECHA separada del rango por una línea, igual al formato original.
                 s.mergeCells(r,1,r+1,3); const codeCell=s.getCell(r,1); codeCell.value=`CODIGO DEL PROYECTO: ${ws().project.codigo||'—'}`; kxXStyle(codeCell,true,null,'left'); codeCell.alignment={horizontal:'left',vertical:'middle',wrapText:false,shrinkToFit:true};
@@ -7563,19 +7563,19 @@ ${bodyHtml}
                 kxMergeStyle(s,r+1,9,10,`${fmtFecha(desde)||'Inicio'}  AL  ${fmtFecha(hasta)||'Hoy'}`,false,null,'center');
                 // Altura suficiente para que el código del proyecto nunca quede oculto por el ajuste de texto.
                 s.getRow(r).height=24; s.getRow(r+1).height=24; r+=2;
-                kxMergeStyle(s,r,1,10,'RESPONSABLES.',true,null,'left');s.getCell(r,1).font={...kxXFont(true,12),underline:true};r++;
+                kxMergeStyle(s,r,1,10,'RESPONSABLES.',true,null,'left');s.getCell(r,1).font={...kxXFont(true,11),underline:true};r++;
                 kxMergeStyle(s,r,1,5,`SUPERVISOR DE OBRA : ${ws().project.sup||'—'}`,true,null,'left');kxMergeStyle(s,r,6,10,`ADMINISTRADOR DE OBRA : ${ws().project.adm||'—'}`,true,null,'left');s.getRow(r).height=18;r++;
                 kxMergeStyle(s,r,1,5,`RESIDENTE DE OBRA : ${ws().project.res||'—'}`,true,null,'left');kxMergeStyle(s,r,6,10,`ALMACENERO (A) : ${ws().project.alm||'—'}`,true,null,'left');s.getRow(r).height=18;r++;
                 materiales.forEach((ing,materialIndex)=>{
                     s.mergeCells(r,1,r,6);
                     const matCell=s.getCell(r,1);
-                    matCell.value={richText:[{font:kxXFont(true,12),text:'MATERIAL: '},{font:kxXFont(false,12),text:String(ing.nombre||'—')}]};
+                    matCell.value={richText:[{font:kxXFont(true,11),text:'MATERIAL: '},{font:kxXFont(false,11),text:String(ing.nombre||'—')}]};
                     matCell.alignment={horizontal:'left',vertical:'middle',wrapText:true};matCell.border=KX_X_BORDER;
                     ['UNIDAD DE MEDIDA','CÓDIGO','O/C','SIAF'].forEach((t,i)=>{const c=s.getCell(r,7+i);c.value=t;kxXStyle(c,true,null,'center');c.alignment={horizontal:'center',vertical:'middle',wrapText:true};});s.getRow(r).height=24;r++;
                     kxMergeStyle(s,r,1,6,'',false,null,'left');[ing.unidad||'—',ing.codigo||'—',ing.oc||'—',ing.siaf||'—'].forEach((v,i)=>{const c=s.getCell(r,7+i);c.value=v;kxXStyle(c,false,null,'center');});s.getRow(r).height=18;r++;
                     s.mergeCells(r,1,r,10);
                     const provCell=s.getCell(r,1);
-                    provCell.value={richText:[{font:kxXFont(true,12),text:'RAZON SOCIAL O NOMBRE: '},{font:kxXFont(false,12),text:String(ing.razon||'')}]};
+                    provCell.value={richText:[{font:kxXFont(true,11),text:'RAZON SOCIAL O NOMBRE: '},{font:kxXFont(false,11),text:String(ing.razon||'')}]};
                     provCell.alignment={horizontal:'left',vertical:'middle',wrapText:true};provCell.border=KX_X_BORDER;s.getRow(r).height=18;r++;
                     const hr=r; s.mergeCells(r,1,r+1,1);s.mergeCells(r,2,r+1,2);s.mergeCells(r,3,r,5);s.mergeCells(r,6,r+1,6);s.mergeCells(r,7,r+1,7);s.mergeCells(r,8,r+1,8);s.mergeCells(r,9,r+1,9);s.mergeCells(r,10,r+1,10);
                     [[1,'N°'],[2,'FECHA'],[3,'MOVIMIENTO'],[6,'DESCRIPCION'],[7,'NOMBRES Y APELLIDOS'],[8,'CARGO'],[9,'FIRMA'],[10,'OBSERVACIÓN']].forEach(([c,v])=>{const ce=s.getCell(r,c);ce.value=v;kxXStyle(ce,true,'FFD9E2F3','center');});
